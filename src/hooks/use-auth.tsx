@@ -9,8 +9,7 @@ import {
   browserSessionPersistence,
   setPersistence
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { auth, googleProvider, db } from "@/lib/firebase";
+import { auth, googleProvider } from "@/lib/firebase";
 import { useRouter, usePathname } from "next/navigation";
 
 export interface UserProfile {
@@ -64,40 +63,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             return;
           }
 
-          const userDocRef = doc(db, "users", firebaseUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
+          // Fetch ID Token to pass to server-side authentication
+          const idToken = await firebaseUser.getIdToken(true);
           
-          const isHardcodedAdmin = firebaseUser.email.toLowerCase() === "khoirotunnisa2507@gmail.com";
+          const response = await fetch("/api/users", {
+            headers: {
+              "Authorization": `Bearer ${idToken}`,
+            },
+          });
 
-          if (userDocSnap.exists()) {
-            const data = userDocSnap.data() as UserProfile;
-            setProfile(data);
-            setUser(firebaseUser);
-            
-            // If they are on login page, redirect to dashboard
-            if (pathname === "/login" || pathname === "/") {
-              router.push("/dashboard");
-            }
-          } else if (isHardcodedAdmin) {
-            // Auto create admin document in Firestore
-            const newProfile: UserProfile = {
-              uid: firebaseUser.uid,
-              name: firebaseUser.displayName || "Admin NexaCode",
-              email: firebaseUser.email,
-              photoURL: firebaseUser.photoURL || "",
-              role: "admin",
-              createdAt: new Date(),
-            };
-            await setDoc(userDocRef, newProfile);
-            setProfile(newProfile);
-            setUser(firebaseUser);
-            
-            if (pathname === "/login" || pathname === "/") {
-              router.push("/dashboard");
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+              setProfile(result.data);
+              setUser(firebaseUser);
+              
+              // If they are on login page, redirect to dashboard
+              if (pathname === "/login" || pathname === "/") {
+                router.push("/dashboard");
+              }
+            } else {
+              console.warn("User is not authorized in Firestore members list");
+              await signOut(auth);
+              setUser(null);
+              setProfile(null);
+              router.push("/unauthorized");
             }
           } else {
-            // User is authenticated by Google but NOT registered in our whitelisted Firestore
-            console.warn("User is not authorized in Firestore members list");
+            console.warn("Failed to verify user profile from server");
             await signOut(auth);
             setUser(null);
             setProfile(null);

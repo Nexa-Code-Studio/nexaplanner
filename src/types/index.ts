@@ -15,7 +15,9 @@ export interface Category {
   id: string;
   name: string;
   color: string; // Tailwind color class or hex (e.g., bg-red-500)
+  description?: string;
   createdAt: Date | Timestamp;
+  updatedAt?: Date | Timestamp;
 }
 
 export interface Event {
