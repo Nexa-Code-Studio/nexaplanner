@@ -4,7 +4,26 @@ import { getAuth } from "firebase-admin/auth";
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+const rawPrivateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+// Robust private key parser — handles all Vercel import variants:
+// 1. Key with surrounding quotes: "-----BEGIN..."
+// 2. Literal \n (from .env.local import): "...KEY-----\nMII..."
+// 3. Double-escaped \\n (some Vercel versions): "...KEY-----\\nMII..."
+// 4. Already has real newlines (manually pasted in Vercel dashboard)
+function parsePrivateKey(raw: string | undefined): string {
+  if (!raw) return "";
+  let key = raw;
+  // Strip surrounding single or double quotes
+  key = key.replace(/^["']|["']$/g, "");
+  // Convert double-escaped \\n to real newline
+  key = key.replace(/\\\\n/g, "\n");
+  // Convert literal \n to real newline (if not already real newlines)
+  key = key.replace(/\\n/g, "\n");
+  return key.trim();
+}
+
+const privateKey = parsePrivateKey(rawPrivateKey);
 
 const isDummy = 
   !projectId || 
@@ -25,7 +44,7 @@ if (!isDummy && projectId && clientEmail && privateKey) {
         credential: cert({
           projectId,
           clientEmail,
-          privateKey: privateKey.replace(/\\n/g, "\n").replace(/^"|"$/g, ""),
+          privateKey,
         }),
       });
     } else {
