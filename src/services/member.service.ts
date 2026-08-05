@@ -51,6 +51,15 @@ export class MemberService {
       throw new Error("Tidak diperbolehkan menghapus akun Administrator utama");
     }
 
+    // Protection to prevent deleting the last administrator
+    if (existing.role === "admin") {
+      const allMembers = await this.repository.findAll();
+      const adminCount = allMembers.filter((m) => m.role === "admin").length;
+      if (adminCount <= 1) {
+        throw new Error("Tidak dapat menghapus Administrator terakhir di dalam sistem");
+      }
+    }
+
     return this.repository.delete(uid);
   }
 }

@@ -75,7 +75,7 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const { errorResponse } = await checkApiAccess(request, "DELETE");
+  const { user, errorResponse } = await checkApiAccess(request, "DELETE");
   if (errorResponse) {
     return errorResponse;
   }
@@ -86,6 +86,14 @@ export async function DELETE(request: Request) {
     if (!id) {
       return NextResponse.json(
         { success: false, message: "Query parameter 'id' anggota wajib disertakan" },
+        { status: 400 }
+      );
+    }
+
+    // Prevent deleting yourself
+    if (user && id === user.uid) {
+      return NextResponse.json(
+        { success: false, message: "Anda tidak diperbolehkan menghapus akun Anda sendiri" },
         { status: 400 }
       );
     }
