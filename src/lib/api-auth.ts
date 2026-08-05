@@ -42,6 +42,40 @@ export async function getAuthenticatedUser(
         return { user: adminProfile, errorResponse: null };
       }
 
+      // Fallback: Admin might have whitelisted this email before the user ever logged in.
+      // The whitelist document was stored with a sanitized email as the doc ID (not the real Firebase UID).
+      // Look up by email, and if found, migrate the document to use the real UID.
+      if (decodedToken.email) {
+        const emailSnapshot = await adminDb
+          .collection("users")
+          .where("email", "==", decodedToken.email.toLowerCase().trim())
+          .limit(1)
+          .get();
+
+        if (!emailSnapshot.empty) {
+          const existingDoc = emailSnapshot.docs[0];
+          const existingData = existingDoc.data() as UserProfile;
+
+          // Only migrate if the stored UID is different from the real Firebase UID
+          if (existingDoc.id !== decodedToken.uid) {
+            // Create new document with the real Firebase UID
+            const migratedProfile: UserProfile = {
+              ...existingData,
+              uid: decodedToken.uid,
+              name: decodedToken.name || existingData.name || "Anggota NexaPlanner",
+              photoURL: decodedToken.picture || existingData.photoURL || "",
+            };
+            await userDocRef.set(migratedProfile);
+            // Delete the old placeholder document
+            await existingDoc.ref.delete();
+            return { user: migratedProfile, errorResponse: null };
+          }
+
+          // Doc ID already matches UID — just return existing data
+          return { user: existingData, errorResponse: null };
+        }
+      }
+
       return {
         user: null,
         errorResponse: NextResponse.json(
