@@ -36,6 +36,7 @@ const isDummy =
 let adminDb: any;
 let adminAuth: any;
 let app: any;
+let initError: any = null;
 
 if (!isDummy && projectId && clientEmail && privateKey) {
   try {
@@ -52,8 +53,9 @@ if (!isDummy && projectId && clientEmail && privateKey) {
     }
     adminDb = getFirestore(app);
     adminAuth = getAuth(app);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to initialize real Firebase Admin SDK, falling back to dummy mocks:", error);
+    initError = error.message || String(error);
     isDummyFallback();
   }
 } else {
@@ -101,5 +103,5 @@ function isDummyFallback() {
   } as any;
 }
 
-export { adminDb, adminAuth };
+export { adminDb, adminAuth, initError };
 export default app;

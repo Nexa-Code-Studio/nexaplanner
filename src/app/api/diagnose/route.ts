@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { adminDb, adminAuth } from "@/lib/firebase-admin";
+import { adminDb, adminAuth, initError } from "@/lib/firebase-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -16,16 +16,21 @@ export async function GET() {
     adminSdk: {
       dbInitialized: !!adminDb,
       authInitialized: !!adminAuth,
+      initError: initError || null,
     }
   };
 
   try {
     // Attempt a light check: verify if Firestore is responsive
     if (adminDb && typeof adminDb.collection === "function") {
-      const testSnap = await adminDb.collection("users").limit(1).get();
+      const usersRef = adminDb.collection("users");
+      const testSnap = typeof usersRef.limit === "function" 
+        ? await usersRef.limit(1).get() 
+        : await usersRef.get();
+
       diagnostics.firestore = {
         success: true,
-        empty: testSnap.empty,
+        empty: testSnap.empty || (testSnap.docs && testSnap.docs.length === 0) || false,
       };
     } else {
       diagnostics.firestore = {
