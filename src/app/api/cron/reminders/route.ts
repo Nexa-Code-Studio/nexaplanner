@@ -31,7 +31,8 @@ async function handleReminders(request: Request) {
           isH0Enabled: true,
         };
 
-    const webhookUrl = settings.discordWebhookUrl;
+    const urlParam = searchParams.get("url");
+    const webhookUrl = isTest && urlParam ? urlParam : settings.discordWebhookUrl;
     if (!webhookUrl) {
       return NextResponse.json(
         { success: false, message: "Discord Webhook URL belum dikonfigurasi di pengaturan." },
