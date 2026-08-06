@@ -166,6 +166,7 @@ async function handleReminders(request: Request) {
     const payload = {
       username: "NexaPlanner BOT",
       avatar_url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=128&h=128&q=80",
+      content: "@everyone",
       embeds: [
         {
           title: "📢 Pengingat Agenda NexaCode",
