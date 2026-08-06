@@ -1,6 +1,21 @@
 import { adminDb } from "@/lib/firebase-admin";
 import { Event } from "@/types";
 
+function convertTimestampToDate(value: any): Date {
+  if (!value) return new Date();
+  if (value instanceof Date) return value;
+  if (typeof value.toDate === "function") {
+    return value.toDate();
+  }
+  if (typeof value._seconds === "number") {
+    return new Date(value._seconds * 1000);
+  }
+  if (typeof value.seconds === "number") {
+    return new Date(value.seconds * 1000);
+  }
+  return new Date(value);
+}
+
 export class EventRepository {
   private collection = adminDb.collection("events");
 
@@ -8,7 +23,14 @@ export class EventRepository {
     const snapshot = await this.collection.orderBy("startDate", "asc").get();
     const events: Event[] = [];
     for (const doc of snapshot.docs) {
-      events.push({ id: doc.id, ...doc.data() } as Event);
+      const data = doc.data();
+      events.push({
+        id: doc.id,
+        ...data,
+        startDate: convertTimestampToDate(data.startDate),
+        endDate: convertTimestampToDate(data.endDate),
+        createdAt: convertTimestampToDate(data.createdAt),
+      } as Event);
     }
     return events;
   }
@@ -18,7 +40,14 @@ export class EventRepository {
     if (!docSnap.exists) {
       return null;
     }
-    return { id: docSnap.id, ...docSnap.data() } as Event;
+    const data = docSnap.data()!;
+    return {
+      id: docSnap.id,
+      ...data,
+      startDate: convertTimestampToDate(data.startDate),
+      endDate: convertTimestampToDate(data.endDate),
+      createdAt: convertTimestampToDate(data.createdAt),
+    } as Event;
   }
 
   async findByCategoryId(categoryId: string): Promise<Event[]> {
@@ -28,7 +57,14 @@ export class EventRepository {
       .get();
     const events: Event[] = [];
     for (const doc of snapshot.docs) {
-      events.push({ id: doc.id, ...doc.data() } as Event);
+      const data = doc.data();
+      events.push({
+        id: doc.id,
+        ...data,
+        startDate: convertTimestampToDate(data.startDate),
+        endDate: convertTimestampToDate(data.endDate),
+        createdAt: convertTimestampToDate(data.createdAt),
+      } as Event);
     }
     return events;
   }
