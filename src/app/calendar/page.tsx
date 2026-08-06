@@ -455,9 +455,9 @@ export default function CalendarPage() {
 
     return (
       <div 
-        className={`w-full px-2 py-1 rounded-r-md text-[10px] md:text-xs font-bold truncate transition-all hover:scale-[1.01] cursor-pointer flex items-center gap-1.5 h-6.5 border border-y-border/20 border-r-border/20 ${styleClasses.bg}`}
+        className={`w-full px-2 py-0.5 rounded-r-md text-[9px] md:text-[10px] font-extrabold truncate transition-all hover:scale-[1.01] cursor-pointer flex items-center gap-1 h-5.5 border border-y-border/10 border-r-border/10 ${styleClasses.bg}`}
       >
-        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${styleClasses.dot}`} />
+        <span className={`h-1 w-1 rounded-full shrink-0 ${styleClasses.dot}`} />
         <span className="truncate">{eventInfo.event.title}</span>
       </div>
     );
@@ -525,7 +525,7 @@ export default function CalendarPage() {
                 headerToolbar={{
                   left: "prev,today,next",
                   center: "title",
-                  right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek"
+                  right: "dayGridMonth,timeGridWeek,timeGridDay,listMonth"
                 }}
                 locale="id"
                 events={calendarEvents}
@@ -538,7 +538,7 @@ export default function CalendarPage() {
                 eventDrop={handleEventDrop}
                 eventResize={handleEventResize}
                 eventContent={renderEventContent}
-                dayMaxEvents={3}
+                dayMaxEvents={4}
                 height="auto"
                 aspectRatio={1.35}
               />

@@ -132,14 +132,61 @@ export default function TimelinePage() {
   } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
-  // ── Mock visual timeline ─────────────────────────────────────────────────
-  const months = ["Jun 2026", "Jul 2026", "Agu 2026"];
-  const visualEvents = [
-    { title: "Pendaftaran & Submission Abstrak", category: "KTI TFS", startOffset: "w-[25%] ml-[10%]", color: "bg-red-500" },
-    { title: "Extend Pendaftaran", category: "KTI TFS", startOffset: "w-[15%] ml-[35%]", color: "bg-red-400" },
-    { title: "Kickoff Project Client", category: "Client Project", startOffset: "w-[30%] ml-[45%]", color: "bg-blue-500" },
-    { title: "Workshop Next.js 15", category: "Workshop", startOffset: "w-[20%] ml-[65%]", color: "bg-emerald-500" },
-  ];
+  // ── Real visual timeline calculation (Gantt Chart) ───────────────────────
+  const visualData = useMemo(() => {
+    if (events.length === 0) return { monthsList: [], displayEvents: [] };
+
+    // Filter out deleted events, and parse dates
+    const parsedEvents = events.map(e => ({
+      ...e,
+      startObj: new Date((e.startDate as any).seconds ? (e.startDate as any).seconds * 1000 : (e.startDate as any)),
+      endObj: new Date((e.endDate as any).seconds ? (e.endDate as any).seconds * 1000 : (e.endDate as any))
+    })).sort((a, b) => a.startObj.getTime() - b.startObj.getTime());
+
+    // Earliest and latest dates
+    const startDates = parsedEvents.map(e => e.startObj.getTime());
+    const endDates = parsedEvents.map(e => e.endObj.getTime());
+    
+    const minTime = Math.min(...startDates);
+    const maxTime = Math.max(...endDates);
+    
+    const minDate = new Date(minTime);
+    const maxDate = new Date(maxTime);
+
+    // Start of minDate month, End of maxDate month
+    const rangeStart = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+    const rangeEnd = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
+    rangeEnd.setHours(23, 59, 59, 999);
+
+    const totalMs = rangeEnd.getTime() - rangeStart.getTime();
+
+    // Get months in range
+    const monthsList: string[] = [];
+    const temp = new Date(rangeStart);
+    while (temp <= rangeEnd) {
+      monthsList.push(temp.toLocaleDateString("id-ID", { month: "short", year: "numeric" }));
+      temp.setMonth(temp.getMonth() + 1);
+    }
+
+    const displayEvents = parsedEvents.map(e => {
+      const left = ((e.startObj.getTime() - rangeStart.getTime()) / totalMs) * 100;
+      const width = Math.max(((e.endObj.getTime() - e.startObj.getTime()) / totalMs) * 100, 2);
+      
+      const cat = categories.find(c => c.id === e.categoryId);
+      const colorClass = cat ? cat.color : "bg-slate-500";
+
+      return {
+        id: e.id,
+        title: e.title,
+        category: cat ? cat.name : "Tanpa Kategori",
+        color: colorClass,
+        left: `${left}%`,
+        width: `${width}%`
+      };
+    });
+
+    return { monthsList, displayEvents };
+  }, [events, categories]);
 
   // ── Step 1 → Step 2: Parse teks ────────────────────────────────────────────
   const handleParse = useCallback(() => {
@@ -302,40 +349,62 @@ export default function TimelinePage() {
         }
       />
 
-      {/* ── TAB: Tampilan Visual (Gantt placeholder) ─────────────────────────── */}
+      {/* ── TAB: Tampilan Visual (Gantt Chart) ───────────────────────────────── */}
       {activeTab === "visual" ? (
         <div className="bg-white dark:bg-card border border-border rounded-2xl p-6 shadow-sm space-y-6">
           <div className="flex items-center gap-2 mb-4">
             <Clock className="h-5 w-5 text-primary-500" />
             <h2 className="text-lg font-bold text-foreground">Timeline Gantt Chart</h2>
           </div>
-          <div className="overflow-x-auto">
-            <div className="min-w-[768px] space-y-4">
-              <div className="grid grid-cols-3 border-b border-border pb-3 font-semibold text-xs text-muted-foreground text-center">
-                {months.map((m) => (
-                  <div key={m} className="border-r border-border/50 last:border-0">{m}</div>
-                ))}
-              </div>
-              <div className="relative space-y-3 pt-2">
-                <div className="absolute inset-0 grid grid-cols-3 pointer-events-none">
-                  <div className="border-r border-slate-100 dark:border-slate-800 h-full" />
-                  <div className="border-r border-slate-100 dark:border-slate-800 h-full" />
-                  <div className="h-full" />
+          
+          {visualData.displayEvents.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic text-center py-10">
+              Belum ada event terdaftar untuk ditampilkan pada Gantt Chart.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <div className="min-w-[768px] space-y-4">
+                {/* Column Headers */}
+                <div 
+                  className="grid border-b border-border pb-3 font-semibold text-xs text-muted-foreground text-center"
+                  style={{ gridTemplateColumns: `repeat(${visualData.monthsList.length || 3}, minmax(0, 1fr))` }}
+                >
+                  {visualData.monthsList.map((m) => (
+                    <div key={m} className="border-r border-border/50 last:border-0 truncate px-1">{m}</div>
+                  ))}
                 </div>
-                {visualEvents.map((ev, i) => (
-                  <div key={i} className="flex flex-col gap-1 relative z-10">
-                    <div className="flex justify-between items-center text-xs px-2">
-                      <span className="font-semibold text-foreground">{ev.title}</span>
-                      <span className="text-[10px] bg-slate-50 dark:bg-slate-900 border border-border px-1.5 py-0.5 rounded text-muted-foreground font-medium">{ev.category}</span>
-                    </div>
-                    <div className="w-full bg-slate-50 dark:bg-slate-900/30 h-7 rounded-lg flex items-center">
-                      <div className={`h-4 rounded-md shadow-sm ${ev.color} ${ev.startOffset} transition-all duration-500`} />
-                    </div>
+
+                {/* Timeline Grid Rows */}
+                <div className="relative space-y-4.5 pt-2 pb-4">
+                  {/* Grid Lines */}
+                  <div 
+                    className="absolute inset-0 grid pointer-events-none"
+                    style={{ gridTemplateColumns: `repeat(${visualData.monthsList.length || 3}, minmax(0, 1fr))` }}
+                  >
+                    {visualData.monthsList.map((m) => (
+                      <div key={m} className="border-r border-slate-100 dark:border-slate-800/60 h-full last:border-0" />
+                    ))}
                   </div>
-                ))}
+
+                  {/* Render Events Bars */}
+                  {visualData.displayEvents.map((ev) => (
+                    <div key={ev.id} className="flex flex-col gap-1 relative z-10">
+                      <div className="flex justify-between items-center text-xs px-2">
+                        <span className="font-semibold text-foreground truncate max-w-[70%]">{ev.title}</span>
+                        <span className="text-[9px] bg-slate-50 dark:bg-slate-900 border border-border px-1.5 py-0.5 rounded text-muted-foreground font-semibold">{ev.category}</span>
+                      </div>
+                      <div className="w-full bg-slate-50 dark:bg-slate-900/10 h-6.5 rounded-lg flex items-center relative overflow-hidden">
+                        <div 
+                          className={`h-3.5 rounded-md shadow-xs ${ev.color} absolute transition-all duration-500`} 
+                          style={{ left: ev.left, width: ev.width }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       ) : (
         /* ── TAB: Impor Jadwal ──────────────────────────────────────────────── */
