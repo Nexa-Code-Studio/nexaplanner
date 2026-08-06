@@ -65,19 +65,23 @@ export default function QuickActions({ isAdmin }: QuickActionsProps) {
         <span>Pintasan Cepat</span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 pt-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 pt-1">
         {filteredActions.map((act) => (
           <div
             key={act.title}
             onClick={() => router.push(act.path)}
-            className="flex items-start gap-3 p-3.5 bg-slate-50/50 dark:bg-slate-900/35 hover:bg-slate-50 dark:hover:bg-slate-900 border border-border/50 rounded-xl cursor-pointer hover:border-primary-500/20 transition-all text-xs"
+            className="group flex flex-col items-center justify-center text-center p-5 bg-slate-50/40 dark:bg-slate-900/30 hover:bg-white dark:hover:bg-card hover:shadow-md border border-border/60 hover:border-primary-500/40 rounded-2xl cursor-pointer transition-all duration-300 transform hover:-translate-y-0.5 min-h-[140px]"
           >
-            <div className="p-2.5 bg-white dark:bg-card border border-border rounded-lg shrink-0">
+            <div className="p-3 bg-white dark:bg-slate-950 border border-border/80 group-hover:border-primary-500/25 group-hover:bg-primary-50/50 dark:group-hover:bg-primary-950/20 rounded-2xl shrink-0 transition-all duration-300 shadow-xs mb-3">
               {act.icon}
             </div>
-            <div className="space-y-0.5 truncate">
-              <span className="font-bold text-foreground block truncate">{act.title}</span>
-              <span className="text-[10px] text-muted-foreground block truncate">{act.desc}</span>
+            <div className="space-y-1 w-full">
+              <span className="font-bold text-foreground block text-sm transition-colors group-hover:text-primary-500 truncate">
+                {act.title}
+              </span>
+              <span className="text-[10px] text-muted-foreground block leading-snug">
+                {act.desc}
+              </span>
             </div>
           </div>
         ))}
