@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Event } from "@/types";
 import { useRouter } from "next/navigation";
-import { Calendar, ChevronRight } from "lucide-react";
+import { Calendar, ChevronRight, X } from "lucide-react";
 
 interface MiniCalendarProps {
   events: Event[];
@@ -11,6 +11,8 @@ interface MiniCalendarProps {
 
 export default function MiniCalendar({ events }: MiniCalendarProps) {
   const router = useRouter();
+  const [selectedDayEvents, setSelectedDayEvents] = useState<Event[] | null>(null);
+  const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
 
   const today = new Date();
   const year = today.getFullYear();
@@ -57,8 +59,26 @@ export default function MiniCalendar({ events }: MiniCalendarProps) {
 
   const weekdays = ["S", "S", "R", "K", "J", "S", "M"];
 
-  const handleDateClick = () => {
-    router.push("/calendar");
+  const handleDateClick = (cell: { day: number | null; hasEvent: boolean; isToday: boolean }) => {
+    if (!cell.day) return;
+    
+    const clickedDate = new Date(year, month, cell.day);
+    const dateString = clickedDate.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    });
+    
+    const dayEvents = events.filter((evt) => {
+      const start = new Date((evt.startDate as any).seconds ? (evt.startDate as any).seconds * 1000 : (evt.startDate as any));
+      start.setHours(0, 0, 0, 0);
+      const end = new Date((evt.endDate as any).seconds ? (evt.endDate as any).seconds * 1000 : (evt.endDate as any));
+      end.setHours(23, 59, 59, 999);
+      return clickedDate >= start && clickedDate <= end;
+    });
+
+    setSelectedDateStr(dateString);
+    setSelectedDayEvents(dayEvents);
   };
 
   return (
@@ -86,7 +106,7 @@ export default function MiniCalendar({ events }: MiniCalendarProps) {
           {cells.map((cell, idx) => (
             <div
               key={idx}
-              onClick={handleDateClick}
+              onClick={() => handleDateClick(cell)}
               className={`h-7 w-7 mx-auto rounded-full flex flex-col items-center justify-center relative transition-all select-none cursor-pointer ${
                 cell.day ? "hover:bg-slate-100 dark:hover:bg-slate-800" : ""
               } ${
@@ -111,6 +131,53 @@ export default function MiniCalendar({ events }: MiniCalendarProps) {
         <span>Lihat Rincian Kalender</span>
         <ChevronRight className="h-3 w-3" />
       </button>
+
+      {/* Daily Events Popup Modal */}
+      {selectedDayEvents && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white dark:bg-card border border-border rounded-2xl w-full max-w-sm shadow-2xl p-5 space-y-4 animate-scale-up text-left">
+            <div className="flex items-center justify-between border-b border-border pb-2.5">
+              <div className="space-y-0.5">
+                <h4 className="font-bold text-foreground text-sm">Agenda Harian</h4>
+                <p className="text-[10px] text-muted-foreground font-bold">{selectedDateStr}</p>
+              </div>
+              <button
+                onClick={() => setSelectedDayEvents(null)}
+                className="p-1 text-muted-foreground hover:text-foreground hover:bg-slate-50 dark:hover:bg-slate-900 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            
+            <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+              {selectedDayEvents.map((evt) => (
+                <div
+                  key={evt.id}
+                  className="p-3 bg-slate-50/50 dark:bg-slate-900/30 border border-border/50 rounded-xl space-y-1"
+                >
+                  <span className="font-bold text-foreground text-xs block">{evt.title}</span>
+                  {evt.location && (
+                    <span className="text-[9px] text-muted-foreground block">📍 {evt.location}</span>
+                  )}
+                </div>
+              ))}
+              
+              {selectedDayEvents.length === 0 && (
+                <p className="text-xs text-muted-foreground italic text-center py-6">
+                  Tidak ada agenda untuk hari ini.
+                </p>
+              )}
+            </div>
+            
+            <button
+              onClick={() => setSelectedDayEvents(null)}
+              className="w-full text-center text-xs font-semibold py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-xl shadow-xs transition-colors cursor-pointer"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
