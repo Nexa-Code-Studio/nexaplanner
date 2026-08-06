@@ -35,10 +35,14 @@ export default function UpcomingCard({ events, categories }: UpcomingCardProps) 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const sevenDaysLater = new Date(today);
+  sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+  sevenDaysLater.setHours(23, 59, 59, 999);
+
   const upcomingEvents = events
     .filter((evt) => {
       const start = new Date((evt.startDate as any).seconds ? (evt.startDate as any).seconds * 1000 : (evt.startDate as any));
-      return start >= today;
+      return start >= today && start <= sevenDaysLater;
     })
     .sort((a, b) => {
       const getMs = (val: any) => new Date(val.seconds ? val.seconds * 1000 : val).getTime();
@@ -51,7 +55,7 @@ export default function UpcomingCard({ events, categories }: UpcomingCardProps) 
       <div className="flex items-center justify-between border-b border-border pb-3">
         <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
           <CalendarDays className="h-4.5 w-4.5 text-primary-500" />
-          <span>Agenda Mendatang (Maks 10)</span>
+          <span>Agenda 7 Hari Ke Depan</span>
         </h3>
         <Link 
           href="/calendar"
