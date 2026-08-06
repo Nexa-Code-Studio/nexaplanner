@@ -434,28 +434,25 @@ export default function CalendarPage() {
     };
 
     let styleClasses = {
-      bg: "bg-slate-50/70 text-slate-700 border-slate-500 dark:bg-slate-900/20 dark:text-slate-400",
-      dot: "bg-slate-500"
+      bg: "bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-900/50 dark:text-slate-400",
+      dot: "bg-slate-400"
     };
 
     if (isPast) {
       styleClasses = {
-        bg: "bg-slate-100/40 text-slate-400/80 border-slate-300 dark:bg-slate-900/20 dark:text-slate-500/80 dark:border-slate-800",
+        bg: "bg-slate-100/80 text-slate-400/80 border border-slate-200/50 dark:bg-slate-900/30 dark:text-slate-500 dark:border-slate-800/80 line-through decoration-slate-300 dark:decoration-slate-700",
         dot: "bg-slate-300 dark:bg-slate-700"
       };
     } else {
-      const mapped = COLOR_MAPS[colorBg];
-      if (mapped) {
-        styleClasses = {
-          bg: `${mapped.bg} ${mapped.text} border-l-4 ${mapped.border}`,
-          dot: mapped.dot
-        };
-      }
+      styleClasses = {
+        bg: `${colorBg} text-white border border-transparent shadow-xs font-semibold`,
+        dot: "bg-white"
+      };
     }
 
     return (
       <div 
-        className={`w-full px-2 py-0.5 rounded-r-md text-[9px] md:text-[10px] font-extrabold truncate transition-all hover:scale-[1.01] cursor-pointer flex items-center gap-1 h-5.5 border border-y-border/10 border-r-border/10 ${styleClasses.bg}`}
+        className={`w-full px-2 py-0.5 rounded-md text-[9px] md:text-[10px] truncate transition-all hover:scale-[1.01] cursor-pointer flex items-center gap-1.5 h-5.5 ${styleClasses.bg}`}
       >
         <span className={`h-1 w-1 rounded-full shrink-0 ${styleClasses.dot}`} />
         <span className="truncate">{eventInfo.event.title}</span>

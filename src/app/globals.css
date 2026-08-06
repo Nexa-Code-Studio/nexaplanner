@@ -128,3 +128,29 @@ body {
 .dark .fc-day-past {
   background-color: rgba(15, 23, 42, 0.15) !important;
 }
+
+/* FullCalendar Day Details Popover Styling (Non-transparent) */
+.fc-popover {
+  background-color: var(--color-card) !important;
+  border: 1px solid var(--color-border) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 12px !important;
+  z-index: 100 !important;
+}
+
+.fc-popover-header {
+  background-color: var(--color-muted) !important;
+  color: var(--color-foreground) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  padding: 8px 12px !important;
+  font-weight: bold !important;
+  border-top-left-radius: 12px !important;
+  border-top-right-radius: 12px !important;
+}
+
+.fc-popover-body {
+  padding: 10px 12px !important;
+  background-color: var(--color-card) !important;
+  border-bottom-left-radius: 12px !important;
+  border-bottom-right-radius: 12px !important;
+}
