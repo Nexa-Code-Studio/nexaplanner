@@ -86,6 +86,28 @@ export async function getAuthenticatedUser(
     }
 
     const user = docSnap.data() as UserProfile;
+    
+    // Auto-update photoURL and name if out of sync with Google Auth token
+    const googleName = decodedToken.name;
+    const googlePhoto = decodedToken.picture;
+    let needsUpdate = false;
+    
+    if (googleName && user.name !== googleName) {
+      user.name = googleName;
+      needsUpdate = true;
+    }
+    if (googlePhoto && user.photoURL !== googlePhoto) {
+      user.photoURL = googlePhoto;
+      needsUpdate = true;
+    }
+    
+    if (needsUpdate) {
+      await userDocRef.update({
+        name: user.name,
+        photoURL: user.photoURL
+      });
+    }
+
     return { user, errorResponse: null };
   } catch (err: any) {
     console.error("Token verification error:", err);

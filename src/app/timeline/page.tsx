@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import PageHeader from "@/components/layout/page-header";
 import { parseTimelineText, ParsedEvent } from "@/lib/parser";
@@ -107,10 +107,17 @@ export default function TimelinePage() {
 
   const [activeTab, setActiveTab] = useState<"visual" | "impor">("impor");
   const [step, setStep] = useState<Step>(1);
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+
+  useEffect(() => {
+    if (categories.length > 0 && !selectedCategoryId) {
+      setSelectedCategoryId(categories[0].id);
+    }
+  }, [categories, selectedCategoryId]);
 
   // Step 1
   const [inputText, setInputText] = useState(
-    `KTI TFS\n\n20 Jun - 4 Jul 2026\nPendaftaran & Submission Abstrak\n\n5 - 15 Jul 2026\nExtend Pendaftaran & Submission Abstrak\n\n18 Jul 2026\nPengumuman Lolos Abstrak\n\n28 Jul - 5 Agu 2026\nSubmission Fullpaper Batch 2`
+    `20 Jun - 4 Jul 2026\nPendaftaran & Submission Abstrak\n\n5 - 15 Jul 2026\nExtend Pendaftaran & Submission Abstrak\n\n18 Jul 2026\nPengumuman Lolos Abstrak\n\n28 Jul - 5 Agu 2026\nSubmission Fullpaper Batch 2`
   );
 
   // Step 2: rows editable
@@ -141,11 +148,6 @@ export default function TimelinePage() {
     if (parsed.length === 0) return;
 
     const newRows: ImportRow[] = parsed.map((p) => {
-      // Cari categoryId yang cocok berdasarkan nama (case-insensitive)
-      const matchCat = categories.find(
-        (c) => c.name.toLowerCase() === p.category.toLowerCase()
-      );
-
       // Cek duplikat: event dengan judul + startDate + endDate yang sama
       const isDuplicate = events.some(
         (e) => {
@@ -162,7 +164,7 @@ export default function TimelinePage() {
       return {
         ...p,
         id: generateId(),
-        categoryId: matchCat?.id ?? (categories[0]?.id ?? ""),
+        categoryId: selectedCategoryId || (categories[0]?.id ?? ""),
         status: isDuplicate ? "duplikat" : "baru",
         duplicateAction: isDuplicate ? "lewati" : undefined,
         deleted: false,
@@ -171,7 +173,7 @@ export default function TimelinePage() {
 
     setRows(newRows);
     setStep(2);
-  }, [inputText, events, categories]);
+  }, [inputText, events, categories, selectedCategoryId]);
 
   // ── Step 2: Edit Baris ────────────────────────────────────────────────────
   const handleUpdateRow = (id: string, field: keyof ImportRow, value: string) => {
@@ -362,14 +364,33 @@ export default function TimelinePage() {
                   </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Format: Baris pertama adalah <strong className="text-foreground">Nama Kategori</strong>. Kemudian <strong className="text-foreground">Rentang Tanggal</strong> (mis: <code className="bg-slate-100 dark:bg-slate-900 px-1 rounded">5 - 15 Jul 2026</code> atau <code className="bg-slate-100 dark:bg-slate-900 px-1 rounded">18 Jul 2026</code>), diikuti <strong className="text-foreground">Judul Event</strong> di baris berikutnya.
+                  Format: Cukup tempel baris <strong className="text-foreground">Rentang Tanggal</strong> (mis: <code className="bg-slate-100 dark:bg-slate-900 px-1 rounded">5 - 15 Jul 2026</code> atau <code className="bg-slate-100 dark:bg-slate-900 px-1 rounded">18 Jul 2026</code>), diikuti <strong className="text-foreground">Judul Event</strong> di baris berikutnya. Pilih kategori untuk seluruh event di bawah ini.
                 </p>
+                
+                {/* Category Selection Dropdown */}
+                <div className="space-y-1.5 text-left">
+                  <label className="text-xs font-bold text-muted-foreground block">
+                    Pilih Kategori Event
+                  </label>
+                  <select
+                    value={selectedCategoryId}
+                    onChange={(e) => setSelectedCategoryId(e.target.value)}
+                    className="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-950 border border-border rounded-xl focus:bg-white outline-none focus:border-primary-500 transition-all text-foreground font-semibold cursor-pointer"
+                  >
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <textarea
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  rows={14}
+                  rows={12}
                   className="w-full p-4 border border-border bg-slate-50 dark:bg-slate-950 font-mono text-[12px] rounded-xl outline-none focus:border-primary-500 focus:bg-white dark:focus:bg-card transition-all resize-none text-foreground"
-                  placeholder={`Contoh:\n\nKTI TFS\n20 Jun - 4 Jul 2026\nPendaftaran & Submission Abstrak`}
+                  placeholder={`Contoh:\n\n20 Jun - 4 Jul 2026\nPendaftaran & Submission Abstrak`}
                 />
                 <button
                   onClick={handleParse}
@@ -390,15 +411,11 @@ export default function TimelinePage() {
                 <div className="space-y-3 text-xs">
                   <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-border/50 space-y-2">
                     <p className="font-bold text-foreground">Contoh Teks:</p>
-                    <pre className="font-mono text-[10px] text-muted-foreground leading-relaxed whitespace-pre-wrap">{`KTI TFS
-
-20 Jun - 4 Jul 2026
+                    <pre className="font-mono text-[10px] text-muted-foreground leading-relaxed whitespace-pre-wrap">{`20 Jun - 4 Jul 2026
 Pendaftaran Abstrak
 
 18 Jul 2026
 Pengumuman Lolos
-
-Workshop Internal
 
 28 Jul - 5 Agu 2026
 Workshop Next.js 15`}</pre>
@@ -406,15 +423,15 @@ Workshop Next.js 15`}</pre>
                   <div className="space-y-2">
                     <div className="flex items-start gap-2">
                       <span className="text-primary-500 font-black mt-0.5">→</span>
-                      <span className="text-muted-foreground"><strong className="text-foreground">Baris teks tanpa tanggal</strong> di awal = nama kategori baru.</span>
+                      <span className="text-muted-foreground"><strong className="text-foreground">Satu tanggal</strong> = tanggal mulai & selesai sama (event satu hari).</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="text-primary-500 font-black mt-0.5">→</span>
-                      <span className="text-muted-foreground"><strong className="text-foreground">Satu tanggal</strong> = startDate = endDate (event satu hari).</span>
+                      <span className="text-muted-foreground"><strong className="text-foreground">Rentang tanggal</strong> = tanggal mulai s/d tanggal selesai.</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="text-primary-500 font-black mt-0.5">→</span>
-                      <span className="text-muted-foreground"><strong className="text-foreground">Rentang tanggal</strong> = startDate → endDate.</span>
+                      <span className="text-muted-foreground"><strong className="text-foreground">Pilih Kategori</strong> pada dropdown di sebelah untuk menyetel jenis kategori seluruh event sekaligus.</span>
                     </div>
                   </div>
                 </div>

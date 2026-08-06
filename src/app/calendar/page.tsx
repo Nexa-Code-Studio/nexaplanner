@@ -364,6 +364,72 @@ export default function CalendarPage() {
         text: "text-slate-700 dark:text-slate-400",
         border: "border-slate-500",
         dot: "bg-slate-500"
+      },
+      "bg-green-500": {
+        bg: "bg-green-50/70 dark:bg-green-950/20",
+        text: "text-green-700 dark:text-green-400",
+        border: "border-green-500",
+        dot: "bg-green-500"
+      },
+      "bg-teal-500": {
+        bg: "bg-teal-50/70 dark:bg-teal-950/20",
+        text: "text-teal-700 dark:text-teal-400",
+        border: "border-teal-500",
+        dot: "bg-teal-500"
+      },
+      "bg-cyan-500": {
+        bg: "bg-cyan-50/70 dark:bg-cyan-950/20",
+        text: "text-cyan-700 dark:text-cyan-400",
+        border: "border-cyan-500",
+        dot: "bg-cyan-500"
+      },
+      "bg-sky-500": {
+        bg: "bg-sky-50/70 dark:bg-sky-950/20",
+        text: "text-sky-700 dark:text-sky-400",
+        border: "border-sky-500",
+        dot: "bg-sky-500"
+      },
+      "bg-indigo-500": {
+        bg: "bg-indigo-50/70 dark:bg-indigo-950/20",
+        text: "text-indigo-700 dark:text-indigo-400",
+        border: "border-indigo-500",
+        dot: "bg-indigo-500"
+      },
+      "bg-violet-500": {
+        bg: "bg-violet-50/70 dark:bg-violet-950/20",
+        text: "text-violet-700 dark:text-violet-400",
+        border: "border-violet-500",
+        dot: "bg-violet-500"
+      },
+      "bg-fuchsia-500": {
+        bg: "bg-fuchsia-50/70 dark:bg-fuchsia-950/20",
+        text: "text-fuchsia-700 dark:text-fuchsia-400",
+        border: "border-fuchsia-500",
+        dot: "bg-fuchsia-500"
+      },
+      "bg-pink-500": {
+        bg: "bg-pink-50/70 dark:bg-pink-950/20",
+        text: "text-pink-700 dark:text-pink-400",
+        border: "border-pink-500",
+        dot: "bg-pink-500"
+      },
+      "bg-rose-500": {
+        bg: "bg-rose-50/70 dark:bg-rose-950/20",
+        text: "text-rose-700 dark:text-rose-400",
+        border: "border-rose-500",
+        dot: "bg-rose-500"
+      },
+      "bg-orange-500": {
+        bg: "bg-orange-50/70 dark:bg-orange-950/20",
+        text: "text-orange-700 dark:text-orange-400",
+        border: "border-orange-500",
+        dot: "bg-orange-500"
+      },
+      "bg-lime-500": {
+        bg: "bg-lime-50/70 dark:bg-lime-950/20",
+        text: "text-lime-700 dark:text-lime-400",
+        border: "border-lime-500",
+        dot: "bg-lime-500"
       }
     };
 

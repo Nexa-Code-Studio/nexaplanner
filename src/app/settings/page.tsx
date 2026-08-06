@@ -5,38 +5,132 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import PageHeader from "@/components/layout/page-header";
-import { Save, ShieldAlert, Sparkles, Mail, Clock, Bell, User } from "lucide-react";
+import { Save, ShieldAlert, Sparkles, Send, Clock, Bell, User, Loader2 } from "lucide-react";
 
 export default function SettingsPage() {
   const { profile, loading } = useAuth();
   const router = useRouter();
 
-  const [resendApiKey, setResendApiKey] = useState("re_1234567890abcdefghijklmnopqrstuvwxyz");
-  const [reminderTime, setReminderTime] = useState("07:00");
+  const [discordWebhookUrl, setDiscordWebhookUrl] = useState("");
+  const [reminderTime, setReminderTime] = useState("08:00");
   const [isH7Enabled, setIsH7Enabled] = useState(true);
   const [isH3Enabled, setIsH3Enabled] = useState(true);
   const [isH1Enabled, setIsH1Enabled] = useState(true);
   const [isH0Enabled, setIsH0Enabled] = useState(true);
   const [systemName, setSystemName] = useState("NexaPlanner Timeline");
 
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isTestingWebhook, setIsTestingWebhook] = useState(false);
+  const [testResult, setTestResult] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
   useEffect(() => {
     if (!loading && profile && profile.role !== "admin") {
       router.push("/unauthorized");
+      return;
     }
   }, [profile, loading, router]);
 
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  useEffect(() => {
+    async function loadSettings() {
+      if (!profile || profile.role !== "admin") return;
+      try {
+        const idToken = window.localStorage.getItem("firebaseIdToken");
+        const res = await fetch("/api/settings", {
+          headers: {
+            "Authorization": `Bearer ${idToken}`
+          }
+        });
+        const result = await res.json();
+        if (result.success && result.data) {
+          setDiscordWebhookUrl(result.data.discordWebhookUrl || "");
+          setReminderTime(result.data.reminderTime || "08:00");
+          setIsH7Enabled(result.data.isH7Enabled !== false);
+          setIsH3Enabled(result.data.isH3Enabled !== false);
+          setIsH1Enabled(result.data.isH1Enabled !== false);
+          setIsH0Enabled(result.data.isH0Enabled !== false);
+        }
+      } catch (err) {
+        console.error("Error loading settings:", err);
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    }
+    loadSettings();
+  }, [profile]);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    setTimeout(() => {
+    try {
+      const idToken = window.localStorage.getItem("firebaseIdToken");
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          discordWebhookUrl,
+          reminderTime,
+          isH7Enabled,
+          isH3Enabled,
+          isH1Enabled,
+          isH0Enabled
+        })
+      });
+      const result = await res.json();
+      if (result.success) {
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+      } else {
+        alert(result.message || "Gagal menyimpan pengaturan");
+      }
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    } finally {
       setIsSaving(false);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-    }, 1200);
+    }
   };
+
+  const handleTestWebhook = async () => {
+    if (!discordWebhookUrl) {
+      setTestResult({ type: "error", message: "Masukkan URL Webhook Discord terlebih dahulu!" });
+      setTimeout(() => setTestResult(null), 4000);
+      return;
+    }
+    
+    setIsTestingWebhook(true);
+    setTestResult(null);
+    try {
+      const res = await fetch(`/api/cron/reminders?test=true&url=${encodeURIComponent(discordWebhookUrl)}`, {
+        method: "POST"
+      });
+      const result = await res.json();
+      if (result.success) {
+        setTestResult({ type: "success", message: "Pesan uji coba berhasil dikirim ke Discord Anda!" });
+      } else {
+        setTestResult({ type: "error", message: result.message || "Gagal mengirim pesan uji coba" });
+      }
+    } catch (err: any) {
+      setTestResult({ type: "error", message: err.message || "Terjadi kesalahan" });
+    } finally {
+      setIsTestingWebhook(false);
+      setTimeout(() => setTestResult(null), 4000);
+    }
+  };
+
+  if (isLoadingSettings) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
+          <span className="text-sm font-semibold text-muted-foreground">Memuat Pengaturan...</span>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -45,7 +139,7 @@ export default function SettingsPage() {
         breadcrumbs={[{ name: "Pengaturan" }]}
       />
 
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
         <form onSubmit={handleSave} className="space-y-6">
           
           {/* General App Settings */}
@@ -57,57 +151,72 @@ export default function SettingsPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground">Nama Aplikasi</label>
+                <label className="text-xs font-bold text-muted-foreground">Nama Aplikasi</label>
                 <input
                   type="text"
                   value={systemName}
                   onChange={(e) => setSystemName(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-border rounded-xl focus:bg-white outline-none focus:border-primary-500 transition-all text-foreground"
+                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-border rounded-xl focus:bg-white outline-none focus:border-primary-500 transition-all text-foreground font-semibold"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground">Zona Waktu Sistem</label>
+                <label className="text-xs font-bold text-muted-foreground">Zona Waktu Sistem</label>
                 <input
                   type="text"
                   disabled
                   value="Asia/Jakarta (WIB)"
-                  className="w-full px-3 py-2 text-sm bg-slate-100 border border-border rounded-xl opacity-70 text-muted-foreground"
+                  className="w-full px-3 py-2 text-sm bg-slate-100 dark:bg-slate-950 border border-border rounded-xl opacity-70 text-muted-foreground font-semibold"
                 />
               </div>
             </div>
           </div>
 
-          {/* Email Settings */}
+          {/* Discord Settings */}
           <div className="bg-white dark:bg-card border border-border rounded-2xl p-6 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 border-b border-border pb-3">
-              <Mail className="h-5 w-5 text-primary-500" />
-              <h2 className="text-base font-bold text-foreground">Konfigurasi Email (Resend)</h2>
+            <div className="flex items-center gap-2 border-b border-border pb-3 justify-between">
+              <div className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-primary-500" />
+                <h2 className="text-base font-bold text-foreground">Integrasi Discord Webhook</h2>
+              </div>
+              <button
+                type="button"
+                onClick={handleTestWebhook}
+                disabled={isTestingWebhook || !discordWebhookUrl}
+                className="inline-flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-900/80 border border-border rounded-xl px-3.5 py-1.5 text-xs font-bold text-primary-500 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isTestingWebhook ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Send className="h-3 w-3" />
+                )}
+                <span>Kirim Uji Coba</span>
+              </button>
             </div>
             
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground">Resend API Key</label>
+                <label className="text-xs font-bold text-muted-foreground">Discord Webhook URL</label>
                 <input
-                  type="password"
-                  value={resendApiKey}
-                  onChange={(e) => setResendApiKey(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-border rounded-xl focus:bg-white outline-none focus:border-primary-500 transition-all text-foreground font-mono"
-                  placeholder="re_..."
+                  type="text"
+                  value={discordWebhookUrl}
+                  onChange={(e) => setDiscordWebhookUrl(e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-border rounded-xl focus:bg-white outline-none focus:border-primary-500 transition-all text-foreground font-mono"
+                  placeholder="https://discord.com/api/webhooks/..."
                 />
-                <p className="text-[10px] text-muted-foreground">
-                  Digunakan oleh backend untuk mengirimkan email pengingat otomatis ke anggota tim.
+                <p className="text-[10px] text-muted-foreground leading-normal font-medium">
+                  Digunakan untuk mengirimkan pengingat agenda harian otomatis secara langsung ke saluran (channel) Discord tim Anda.
                 </p>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground">Email Pengirim Default</label>
-                <input
-                  type="text"
-                  disabled
-                  value="NexaPlanner <noreply@nexacode.id>"
-                  className="w-full px-3 py-2 text-sm bg-slate-100 border border-border rounded-xl opacity-70 text-muted-foreground"
-                />
-              </div>
+              {testResult && (
+                <div className={`p-3 rounded-xl text-xs font-bold border ${
+                  testResult.type === "success" 
+                    ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20" 
+                    : "bg-red-50 text-red-600 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20"
+                }`}>
+                  {testResult.message}
+                </div>
+              )}
             </div>
           </div>
 
@@ -120,22 +229,22 @@ export default function SettingsPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground">Waktu Pengiriman Harian</label>
+                <label className="text-xs font-bold text-muted-foreground">Waktu Pengiriman Harian</label>
                 <input
                   type="time"
                   value={reminderTime}
                   onChange={(e) => setReminderTime(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-border rounded-xl focus:bg-white outline-none focus:border-primary-500 transition-all text-foreground"
+                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-border rounded-xl focus:bg-white outline-none focus:border-primary-500 transition-all text-foreground font-semibold"
                 />
-                <p className="text-[10px] text-muted-foreground">
-                  Scheduler harian akan dipicu secara otomatis setiap jam ini untuk memindai agenda.
+                <p className="text-[10px] text-muted-foreground leading-normal font-medium">
+                  Setiap hari pada jam ini, sistem akan memicu cron job untuk memeriksa agenda dan mengirimkan notifikasi.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <span className="text-xs font-semibold text-muted-foreground block mb-1">Interval Pengingat</span>
+                <span className="text-xs font-bold text-muted-foreground block mb-1">Interval Pengingat Hari</span>
                 <div className="grid grid-cols-2 gap-3">
-                  <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground select-none cursor-pointer">
+                  <label className="flex items-center gap-2 text-xs font-bold text-muted-foreground select-none cursor-pointer">
                     <input
                       type="checkbox"
                       checked={isH7Enabled}
@@ -144,7 +253,7 @@ export default function SettingsPage() {
                     />
                     <span>H-7 Event</span>
                   </label>
-                  <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground select-none cursor-pointer">
+                  <label className="flex items-center gap-2 text-xs font-bold text-muted-foreground select-none cursor-pointer">
                     <input
                       type="checkbox"
                       checked={isH3Enabled}
@@ -153,7 +262,7 @@ export default function SettingsPage() {
                     />
                     <span>H-3 Event</span>
                   </label>
-                  <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground select-none cursor-pointer">
+                  <label className="flex items-center gap-2 text-xs font-bold text-muted-foreground select-none cursor-pointer">
                     <input
                       type="checkbox"
                       checked={isH1Enabled}
@@ -162,7 +271,7 @@ export default function SettingsPage() {
                     />
                     <span>H-1 Event</span>
                   </label>
-                  <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground select-none cursor-pointer">
+                  <label className="flex items-center gap-2 text-xs font-bold text-muted-foreground select-none cursor-pointer">
                     <input
                       type="checkbox"
                       checked={isH0Enabled}
@@ -191,7 +300,7 @@ export default function SettingsPage() {
               className="inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors cursor-pointer disabled:opacity-50"
             >
               {isSaving ? (
-                <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Save className="h-4 w-4" />
               )}
