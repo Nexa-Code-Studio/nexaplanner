@@ -38,7 +38,7 @@ function formatToYMD(date: Date): string {
 
 export default function CalendarPage() {
   const { profile } = useAuth();
-  const isAdmin = profile?.role === "admin";
+  const isAdmin = profile?.role === "admin" || profile?.role === "member";
 
   const {
     events,

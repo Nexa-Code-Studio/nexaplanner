@@ -26,6 +26,8 @@ export default function Sidebar({ isOpen, onClose, className }: SidebarProps) {
   const pathname = usePathname();
   const { profile, logout } = useAuth();
 
+  const isAdmin = profile?.role === "admin";
+
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Kalender", href: "/calendar", icon: Calendar },
@@ -33,7 +35,7 @@ export default function Sidebar({ isOpen, onClose, className }: SidebarProps) {
     { name: "Event", href: "/events", icon: CalendarDays },
     { name: "Kategori", href: "/categories", icon: Folder },
     { name: "Anggota", href: "/members", icon: Users },
-    { name: "Pengaturan", href: "/settings", icon: Settings },
+    ...(isAdmin ? [{ name: "Pengaturan", href: "/settings", icon: Settings }] : []),
   ];
 
   return (

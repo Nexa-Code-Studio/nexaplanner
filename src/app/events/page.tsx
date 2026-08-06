@@ -28,7 +28,7 @@ import {
 
 export default function EventsPage() {
   const { profile } = useAuth();
-  const isAdmin = profile?.role === "admin";
+  const isAdmin = profile?.role === "admin" || profile?.role === "member";
 
   const {
     events,

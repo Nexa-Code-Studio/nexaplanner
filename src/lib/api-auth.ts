@@ -133,7 +133,19 @@ export async function checkApiAccess(
   request: Request,
   method: string
 ): Promise<{ user: UserProfile | null; errorResponse: NextResponse | null }> {
+  const url = new URL(request.url);
   const isRead = method === "GET";
-  const requiredRoles: ("admin" | "member")[] = isRead ? ["admin", "member"] : ["admin"];
+  
+  // If it's the members API, only allow admins to write (POST/PUT/DELETE)
+  // For other APIs (like categories, events), allow both admin and member to write
+  const isMembersApi = url.pathname.includes("/api/members");
+  
+  let requiredRoles: ("admin" | "member")[] = [];
+  if (isRead) {
+    requiredRoles = ["admin", "member"];
+  } else {
+    requiredRoles = isMembersApi ? ["admin"] : ["admin", "member"];
+  }
+  
   return verifyRole(request, requiredRoles);
 }

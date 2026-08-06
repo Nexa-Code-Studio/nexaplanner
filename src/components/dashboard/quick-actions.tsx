@@ -24,14 +24,14 @@ export default function QuickActions({ isAdmin }: QuickActionsProps) {
       desc: "Jadwalkan agenda baru",
       icon: <Plus className="h-5 w-5 text-blue-500" />,
       path: "/calendar",
-      adminOnly: true,
+      adminOnly: false,
     },
     {
       title: "Impor Timeline",
       desc: "Parse teks jadwal",
       icon: <FileSpreadsheet className="h-5 w-5 text-emerald-500" />,
       path: "/timeline",
-      adminOnly: true,
+      adminOnly: false,
     },
     {
       title: "Buka Kalender",

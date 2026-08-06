@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import PageHeader from "@/components/layout/page-header";
 import { Save, ShieldAlert, Sparkles, Mail, Clock, Bell, User } from "lucide-react";
 
 export default function SettingsPage() {
+  const { profile, loading } = useAuth();
+  const router = useRouter();
+
   const [resendApiKey, setResendApiKey] = useState("re_1234567890abcdefghijklmnopqrstuvwxyz");
   const [reminderTime, setReminderTime] = useState("07:00");
   const [isH7Enabled, setIsH7Enabled] = useState(true);
@@ -13,6 +18,12 @@ export default function SettingsPage() {
   const [isH1Enabled, setIsH1Enabled] = useState(true);
   const [isH0Enabled, setIsH0Enabled] = useState(true);
   const [systemName, setSystemName] = useState("NexaPlanner Timeline");
+
+  useEffect(() => {
+    if (!loading && profile && profile.role !== "admin") {
+      router.push("/unauthorized");
+    }
+  }, [profile, loading, router]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);

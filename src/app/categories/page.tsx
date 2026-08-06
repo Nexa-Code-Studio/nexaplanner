@@ -22,7 +22,7 @@ import {
 
 export default function CategoriesPage() {
   const { profile } = useAuth();
-  const isAdmin = profile?.role === "admin";
+  const isAdmin = profile?.role === "admin" || profile?.role === "member";
 
   const {
     categories,
