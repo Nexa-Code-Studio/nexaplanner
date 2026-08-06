@@ -1,7 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Search, Bell, Menu, Sparkles } from "lucide-react";
+import { Search, Bell, Menu, Sparkles, Sun, Moon } from "lucide-react";
 
 interface NavbarProps {
   onMenuClick: () => void;
@@ -9,6 +10,27 @@ interface NavbarProps {
 
 export default function Navbar({ onMenuClick }: NavbarProps) {
   const { profile } = useAuth();
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    if (document.documentElement.classList.contains("dark")) {
+      setTheme("dark");
+    } else {
+      setTheme("light");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    if (document.documentElement.classList.contains("dark")) {
+      document.documentElement.classList.remove("dark");
+      localStorage.theme = "light";
+      setTheme("light");
+    } else {
+      document.documentElement.classList.add("dark");
+      localStorage.theme = "dark";
+      setTheme("dark");
+    }
+  };
 
   return (
     <header className="flex items-center justify-between px-6 h-16 bg-white dark:bg-card border-b border-border sticky top-0 z-30">
@@ -34,6 +56,19 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
 
       {/* Actions / Right Section */}
       <div className="flex items-center gap-4">
+        {/* Theme Toggle Switcher */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 text-muted-foreground hover:text-foreground hover:bg-slate-50 dark:hover:bg-slate-900 rounded-lg transition-colors cursor-pointer"
+          title={theme === "dark" ? "Ubah ke Mode Terang" : "Ubah ke Mode Gelap"}
+        >
+          {theme === "dark" ? (
+            <Sun className="h-5 w-5 text-amber-500 animate-pulse" />
+          ) : (
+            <Moon className="h-5 w-5" />
+          )}
+        </button>
+
         {/* Notification Bell */}
         <button className="relative p-2 text-muted-foreground hover:text-foreground hover:bg-slate-50 dark:hover:bg-slate-900 rounded-lg transition-colors cursor-pointer">
           <Bell className="h-5 w-5" />

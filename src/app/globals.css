@@ -28,22 +28,20 @@
 }
 
 /* Dark mode theme custom overrides */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-border: #1e293b;
-    --color-input: #1e293b;
-    --color-background: #020817;
-    --color-foreground: #f8fafc;
-    
-    --color-muted: #0f172a;
-    --color-muted-foreground: #94a3b8;
-    
-    --color-card: #030712;
-    --color-card-foreground: #f8fafc;
-    
-    --color-popover: #030712;
-    --color-popover-foreground: #f8fafc;
-  }
+.dark {
+  --color-border: #1e293b;
+  --color-input: #1e293b;
+  --color-background: #020817;
+  --color-foreground: #f8fafc;
+  
+  --color-muted: #0f172a;
+  --color-muted-foreground: #94a3b8;
+  
+  --color-card: #030712;
+  --color-card-foreground: #f8fafc;
+  
+  --color-popover: #030712;
+  --color-popover-foreground: #f8fafc;
 }
 
 :root {
