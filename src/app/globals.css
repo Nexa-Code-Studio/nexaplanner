@@ -99,3 +99,30 @@ body {
 .animate-fade-in {
   animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* FullCalendar Custom Event Styling Overrides */
+.fc-v-event, 
+.fc-h-event {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.fc-daygrid-event {
+  margin-top: 2px !important;
+  margin-bottom: 2px !important;
+}
+
+.fc-event-main {
+  padding: 0 !important;
+}
+
+/* Custom past days style inside FullCalendar */
+.fc-day-past {
+  background-color: rgba(241, 245, 249, 0.25) !important;
+}
+
+.dark .fc-day-past {
+  background-color: rgba(15, 23, 42, 0.15) !important;
+}

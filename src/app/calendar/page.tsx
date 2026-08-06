@@ -314,9 +314,85 @@ export default function CalendarPage() {
   // Custom Event Element Rendering
   const renderEventContent = (eventInfo: any) => {
     const colorBg = eventInfo.event.extendedProps.color || "bg-slate-500";
+    
+    // Check if event is in the past
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    
+    const eventEnd = eventInfo.event.end ? new Date(eventInfo.event.end) : new Date(eventInfo.event.start);
+    const isPast = eventEnd < today;
+    
+    const COLOR_MAPS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
+      "bg-red-500": {
+        bg: "bg-red-50/70 dark:bg-red-950/20",
+        text: "text-red-700 dark:text-red-400",
+        border: "border-red-500",
+        dot: "bg-red-500"
+      },
+      "bg-blue-500": {
+        bg: "bg-blue-50/70 dark:bg-blue-950/20",
+        text: "text-blue-700 dark:text-blue-400",
+        border: "border-blue-500",
+        dot: "bg-blue-500"
+      },
+      "bg-emerald-500": {
+        bg: "bg-emerald-50/70 dark:bg-emerald-950/20",
+        text: "text-emerald-700 dark:text-emerald-400",
+        border: "border-emerald-500",
+        dot: "bg-emerald-500"
+      },
+      "bg-purple-500": {
+        bg: "bg-purple-50/70 dark:bg-purple-950/20",
+        text: "text-purple-700 dark:text-purple-400",
+        border: "border-purple-500",
+        dot: "bg-purple-500"
+      },
+      "bg-amber-500": {
+        bg: "bg-amber-50/70 dark:bg-amber-950/20",
+        text: "text-amber-700 dark:text-amber-400",
+        border: "border-amber-500",
+        dot: "bg-amber-500"
+      },
+      "bg-yellow-500": {
+        bg: "bg-yellow-50/70 dark:bg-yellow-950/20",
+        text: "text-yellow-700 dark:text-yellow-400",
+        border: "border-yellow-500",
+        dot: "bg-yellow-500"
+      },
+      "bg-slate-500": {
+        bg: "bg-slate-50/70 dark:bg-slate-900/20",
+        text: "text-slate-700 dark:text-slate-400",
+        border: "border-slate-500",
+        dot: "bg-slate-500"
+      }
+    };
+
+    let styleClasses = {
+      bg: "bg-slate-50/70 text-slate-700 border-slate-500 dark:bg-slate-900/20 dark:text-slate-400",
+      dot: "bg-slate-500"
+    };
+
+    if (isPast) {
+      styleClasses = {
+        bg: "bg-slate-100/40 text-slate-400/80 border-slate-300 dark:bg-slate-900/20 dark:text-slate-500/80 dark:border-slate-800",
+        dot: "bg-slate-300 dark:bg-slate-700"
+      };
+    } else {
+      const mapped = COLOR_MAPS[colorBg];
+      if (mapped) {
+        styleClasses = {
+          bg: `${mapped.bg} ${mapped.text} border-l-4 ${mapped.border}`,
+          dot: mapped.dot
+        };
+      }
+    }
+
     return (
-      <div className={`w-full px-2 py-1.5 rounded-md text-[10px] md:text-xs font-bold text-white truncate shadow-xs ${colorBg} border-0 transition-transform hover:scale-[1.02] cursor-pointer`}>
-        {eventInfo.event.title}
+      <div 
+        className={`w-full px-2 py-1 rounded-r-md text-[10px] md:text-xs font-bold truncate transition-all hover:scale-[1.01] cursor-pointer flex items-center gap-1.5 h-6.5 border border-y-border/20 border-r-border/20 ${styleClasses.bg}`}
+      >
+        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${styleClasses.dot}`} />
+        <span className="truncate">{eventInfo.event.title}</span>
       </div>
     );
   };
