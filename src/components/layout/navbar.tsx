@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Search, Bell, Menu, Sparkles, Sun, Moon } from "lucide-react";
+import { Search, Bell, Menu, Sun, Moon } from "lucide-react";
+import Link from "next/link";
 
 interface NavbarProps {
   onMenuClick: () => void;
@@ -33,7 +34,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
   };
 
   return (
-    <header className="flex items-center justify-between px-6 h-16 bg-white dark:bg-card border-b border-border sticky top-0 z-30">
+    <header className="flex items-center justify-between px-6 h-16 bg-white dark:bg-card border-b border-border sticky top-0 z-10">
       {/* Search Bar / Left Section */}
       <div className="flex items-center gap-4 flex-1">
         <button
@@ -75,25 +76,25 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
           <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-primary-500 rounded-full ring-2 ring-white dark:ring-card"></span>
         </button>
 
-        {/* User Profile */}
+        {/* User Profile Link */}
         <div className="flex items-center gap-3 pl-2 border-l border-border">
           {profile && (
-            <div className="flex items-center gap-2">
+            <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-all cursor-pointer">
               {profile.photoURL ? (
                 <img
                   src={profile.photoURL}
                   alt={profile.name}
-                  className="h-8 w-8 rounded-full object-cover ring-2 ring-primary-50/50"
+                  className="h-8 w-8 rounded-full object-cover ring-2 ring-primary-550/20"
                 />
               ) : (
-                <div className="h-8 w-8 rounded-full bg-primary-500 text-white flex items-center justify-center font-semibold text-xs">
+                <div className="h-8 w-8 rounded-full bg-primary-500 text-white flex items-center justify-center font-semibold text-xs shrink-0">
                   {profile.name.charAt(0).toUpperCase()}
                 </div>
               )}
               <span className="text-xs font-semibold text-foreground hidden md:inline-block max-w-[120px] truncate">
                 {profile.name}
               </span>
-            </div>
+            </Link>
           )}
         </div>
       </div>

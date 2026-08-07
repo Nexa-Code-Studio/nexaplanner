@@ -13,6 +13,7 @@ interface DashboardStatsProps {
   totalCategories: number;
   totalMembers: number;
   eventsThisMonth: number;
+  activeCategoriesThisMonth: number;
 }
 
 export default function DashboardStats({
@@ -20,6 +21,7 @@ export default function DashboardStats({
   totalCategories,
   totalMembers,
   eventsThisMonth,
+  activeCategoriesThisMonth,
 }: DashboardStatsProps) {
   const statCards = [
     {
@@ -33,6 +35,12 @@ export default function DashboardStats({
       value: totalCategories,
       icon: <Tag className="h-5 w-5 text-emerald-500" />,
       bg: "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20",
+    },
+    {
+      title: "Kategori Aktif",
+      value: activeCategoriesThisMonth,
+      icon: <Sparkles className="h-5 w-5 text-cyan-500" />,
+      bg: "bg-cyan-50 dark:bg-cyan-500/10 border-cyan-100 dark:border-cyan-500/20",
     },
     {
       title: "Anggota Tim",
@@ -49,7 +57,7 @@ export default function DashboardStats({
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 text-left">
       {statCards.map((card) => (
         <div
           key={card.title}

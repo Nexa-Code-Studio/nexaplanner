@@ -28,23 +28,26 @@ export default function DashboardPage() {
   const loading = loadingEvents || loadingCategories || loadingMembers;
 
   const stats = useMemo(() => {
-    if (loading) return { totalEvents: 0, totalCategories: 0, totalMembers: 0, eventsThisMonth: 0 };
+    if (loading) return { totalEvents: 0, totalCategories: 0, totalMembers: 0, eventsThisMonth: 0, activeCategoriesThisMonth: 0 };
 
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    const eventsThisMonthCount = events.filter((evt) => {
+    const thisMonthEvents = events.filter((evt) => {
       const start = new Date((evt.startDate as any).seconds ? (evt.startDate as any).seconds * 1000 : (evt.startDate as any));
       const end = new Date((evt.endDate as any).seconds ? (evt.endDate as any).seconds * 1000 : (evt.endDate as any));
       return end >= startOfMonth && start <= endOfMonth;
-    }).length;
+    });
+
+    const activeCategoryIds = new Set(thisMonthEvents.map(e => e.categoryId));
 
     return {
       totalEvents: events.length,
       totalCategories: categories.length,
       totalMembers: members.length,
-      eventsThisMonth: eventsThisMonthCount,
+      eventsThisMonth: thisMonthEvents.length,
+      activeCategoriesThisMonth: activeCategoryIds.size,
     };
   }, [events, categories, members, loading]);
 
@@ -81,6 +84,7 @@ export default function DashboardPage() {
             totalCategories={stats.totalCategories}
             totalMembers={stats.totalMembers}
             eventsThisMonth={stats.eventsThisMonth}
+            activeCategoriesThisMonth={stats.activeCategoriesThisMonth}
           />
 
           {/* 2. Main Analytics & Logs Grid */}
@@ -130,6 +134,9 @@ export default function DashboardPage() {
             <div className="lg:col-span-1 h-full">
               <MiniCalendar
                 events={events}
+                categories={categories}
+                members={members}
+                isAdmin={isAdmin}
               />
             </div>
           </div>

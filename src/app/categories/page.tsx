@@ -179,12 +179,16 @@ export default function CategoriesPage() {
         return a.name.localeCompare(b.name);
       }
       
-      const dateA = a.createdAt 
-        ? new Date((a.createdAt as any).seconds ? (a.createdAt as any).seconds * 1000 : (a.createdAt as any)).getTime()
-        : 0;
-      const dateB = b.createdAt 
-        ? new Date((b.createdAt as any).seconds ? (b.createdAt as any).seconds * 1000 : (b.createdAt as any)).getTime()
-        : 0;
+      const parseFirebaseDate = (dateVal: any): number => {
+        if (!dateVal) return 0;
+        const seconds = dateVal._seconds !== undefined ? dateVal._seconds : dateVal.seconds;
+        if (seconds !== undefined) return seconds * 1000;
+        const date = new Date(dateVal);
+        return isNaN(date.getTime()) ? 0 : date.getTime();
+      };
+      
+      const dateA = parseFirebaseDate(a.createdAt);
+      const dateB = parseFirebaseDate(b.createdAt);
 
       if (sortBy === "newest") {
         return dateB - dateA;
@@ -195,7 +199,17 @@ export default function CategoriesPage() {
 
   const formatFirebaseDate = (createdAt: any) => {
     if (!createdAt) return "-";
-    const date = new Date(createdAt.seconds ? createdAt.seconds * 1000 : createdAt);
+    const seconds = createdAt._seconds !== undefined ? createdAt._seconds : createdAt.seconds;
+    if (seconds !== undefined) {
+      const date = new Date(seconds * 1000);
+      return date.toLocaleDateString("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      });
+    }
+    const date = new Date(createdAt);
+    if (isNaN(date.getTime())) return "-";
     return date.toLocaleDateString("id-ID", {
       day: "2-digit",
       month: "short",
@@ -299,8 +313,12 @@ export default function CategoriesPage() {
                     </td>
 
                     {/* Description */}
-                    <td className="px-6 py-4 text-muted-foreground max-w-sm truncate" title={cat.description}>
-                      {cat.description || "-"}
+                    <td className="px-6 py-4 max-w-sm truncate" title={cat.description}>
+                      {cat.description ? (
+                        <span className="text-muted-foreground">{cat.description}</span>
+                      ) : (
+                        <span className="text-slate-400 dark:text-slate-600 font-medium italic text-[11.5px]">Tidak ada deskripsi</span>
+                      )}
                     </td>
 
                     {/* Created Date */}

@@ -16,6 +16,7 @@ export async function GET(request: Request) {
       // Return default configuration if it doesn't exist yet
       const defaults = {
         discordWebhookUrl: "",
+        discordMessage: "Oi, reminder nih!",
         reminderTime: "08:00",
         isH7Enabled: true,
         isH3Enabled: true,
@@ -49,6 +50,7 @@ export async function PUT(request: Request) {
     
     const settingsData = {
       discordWebhookUrl: body.discordWebhookUrl || "",
+      discordMessage: body.discordMessage || "Oi, reminder nih!",
       reminderTime: body.reminderTime || "08:00",
       isH7Enabled: typeof body.isH7Enabled === "boolean" ? body.isH7Enabled : true,
       isH3Enabled: typeof body.isH3Enabled === "boolean" ? body.isH3Enabled : true,

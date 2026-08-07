@@ -37,6 +37,8 @@ export class MemberRepository {
     const docId = data.uid || data.email.toLowerCase().trim().replace(/[@.]/g, "_");
     const userDocRef = this.collection.doc(docId);
     
+    const emailPrefix = data.email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "");
+    
     const member: UserProfile = {
       uid: data.uid || docId,
       name: data.name,
@@ -44,6 +46,8 @@ export class MemberRepository {
       photoURL: data.photoURL || "",
       role: data.role,
       createdAt: new Date(),
+      username: data.username || emailPrefix,
+      password: data.password || emailPrefix,
     };
     await userDocRef.set(member);
     return userDocRef.id;

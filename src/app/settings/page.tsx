@@ -8,10 +8,11 @@ import PageHeader from "@/components/layout/page-header";
 import { Save, ShieldAlert, Sparkles, Send, Clock, Bell, User, Loader2 } from "lucide-react";
 
 export default function SettingsPage() {
-  const { profile, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const router = useRouter();
 
   const [discordWebhookUrl, setDiscordWebhookUrl] = useState("");
+  const [discordMessage, setDiscordMessage] = useState("Oi, reminder nih!");
   const [reminderTime, setReminderTime] = useState("08:00");
   const [isH7Enabled, setIsH7Enabled] = useState(true);
   const [isH3Enabled, setIsH3Enabled] = useState(true);
@@ -34,9 +35,9 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function loadSettings() {
-      if (!profile || profile.role !== "admin") return;
+      if (!profile || profile.role !== "admin" || !user) return;
       try {
-        const idToken = window.localStorage.getItem("firebaseIdToken");
+        const idToken = await user.getIdToken();
         const res = await fetch("/api/settings", {
           headers: {
             "Authorization": `Bearer ${idToken}`
@@ -45,6 +46,7 @@ export default function SettingsPage() {
         const result = await res.json();
         if (result.success && result.data) {
           setDiscordWebhookUrl(result.data.discordWebhookUrl || "");
+          setDiscordMessage(result.data.discordMessage || "Oi, reminder nih!");
           setReminderTime(result.data.reminderTime || "08:00");
           setIsH7Enabled(result.data.isH7Enabled !== false);
           setIsH3Enabled(result.data.isH3Enabled !== false);
@@ -58,13 +60,14 @@ export default function SettingsPage() {
       }
     }
     loadSettings();
-  }, [profile]);
+  }, [profile, user]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     setIsSaving(true);
     try {
-      const idToken = window.localStorage.getItem("firebaseIdToken");
+      const idToken = await user.getIdToken();
       const res = await fetch("/api/settings", {
         method: "PUT",
         headers: {
@@ -73,6 +76,7 @@ export default function SettingsPage() {
         },
         body: JSON.stringify({
           discordWebhookUrl,
+          discordMessage,
           reminderTime,
           isH7Enabled,
           isH3Enabled,
@@ -205,6 +209,20 @@ export default function SettingsPage() {
                 />
                 <p className="text-[10px] text-muted-foreground leading-normal font-medium">
                   Digunakan untuk mengirimkan pengingat agenda harian otomatis secara langsung ke saluran (channel) Discord tim Anda.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-muted-foreground">Pesan Pembuka Notifikasi Discord</label>
+                <input
+                  type="text"
+                  value={discordMessage}
+                  onChange={(e) => setDiscordMessage(e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-border rounded-xl focus:bg-white outline-none focus:border-primary-500 transition-all text-foreground font-semibold"
+                  placeholder="Misal: Oi, reminder nih!"
+                />
+                <p className="text-[10px] text-muted-foreground leading-normal font-medium">
+                  Kalimat pembuka yang dikirimkan bersama tag @everyone (contoh: @everyone Oi, reminder nih!).
                 </p>
               </div>
 

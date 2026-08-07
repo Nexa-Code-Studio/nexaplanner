@@ -41,7 +41,7 @@ export default function Sidebar({ isOpen, onClose, className }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "flex flex-col h-full bg-white dark:bg-card border-r border-border w-64 transition-transform duration-300 ease-in-out md:translate-x-0 z-40",
+        "flex flex-col h-full bg-white dark:bg-card border-r border-border w-64 transition-transform duration-300 ease-in-out md:translate-x-0 z-40 md:z-auto",
         isOpen ? "translate-x-0" : "-translate-x-full",
         className
       )}
@@ -89,7 +89,10 @@ export default function Sidebar({ isOpen, onClose, className }: SidebarProps) {
       {/* Footer Profile & Logout */}
       <div className="p-4 border-t border-border bg-slate-50/50 dark:bg-card">
         {profile && (
-          <div className="flex items-center gap-3 mb-4 px-2">
+          <Link 
+            href="/profile" 
+            className="flex items-center gap-3 mb-4 px-2 hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 rounded-xl transition-all cursor-pointer w-full text-left"
+          >
             {profile.photoURL ? (
               <img
                 src={profile.photoURL}
@@ -97,7 +100,7 @@ export default function Sidebar({ isOpen, onClose, className }: SidebarProps) {
                 className="h-9 w-9 rounded-full object-cover ring-2 ring-primary-100 dark:ring-primary-500/20"
               />
             ) : (
-              <div className="h-9 w-9 rounded-full bg-primary-500 text-white flex items-center justify-center font-semibold text-sm">
+              <div className="h-9 w-9 rounded-full bg-primary-500 text-white flex items-center justify-center font-semibold text-sm shrink-0">
                 {profile.name.charAt(0).toUpperCase()}
               </div>
             )}
@@ -105,7 +108,7 @@ export default function Sidebar({ isOpen, onClose, className }: SidebarProps) {
               <p className="text-sm font-semibold text-foreground truncate">{profile.name}</p>
               <p className="text-xs text-muted-foreground truncate capitalize">{profile.role}</p>
             </div>
-          </div>
+          </Link>
         )}
         <button
           onClick={logout}

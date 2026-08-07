@@ -1,18 +1,23 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Event } from "@/types";
+import { Event, Category, UserProfile } from "@/types";
 import { useRouter } from "next/navigation";
 import { Calendar, ChevronRight, X } from "lucide-react";
+import EventDetailDialog from "@/components/calendar/event-detail-dialog";
 
 interface MiniCalendarProps {
   events: Event[];
+  categories: Category[];
+  members: UserProfile[];
+  isAdmin: boolean;
 }
 
-export default function MiniCalendar({ events }: MiniCalendarProps) {
+export default function MiniCalendar({ events, categories, members, isAdmin }: MiniCalendarProps) {
   const router = useRouter();
   const [selectedDayEvents, setSelectedDayEvents] = useState<Event[] | null>(null);
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   const today = new Date();
   const year = today.getFullYear();
@@ -153,7 +158,8 @@ export default function MiniCalendar({ events }: MiniCalendarProps) {
               {selectedDayEvents.map((evt) => (
                 <div
                   key={evt.id}
-                  className="p-3 bg-slate-50/50 dark:bg-slate-900/30 border border-border/50 rounded-xl space-y-1"
+                  onClick={() => setSelectedEvent(evt)}
+                  className="p-3 bg-slate-50/50 dark:bg-slate-900/30 border border-border/50 rounded-xl space-y-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   <span className="font-bold text-foreground text-xs block">{evt.title}</span>
                   {evt.location && (
@@ -177,6 +183,19 @@ export default function MiniCalendar({ events }: MiniCalendarProps) {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Main Event Detail Modal Sync */}
+      {selectedEvent && (
+        <EventDetailDialog
+          event={selectedEvent}
+          categories={categories}
+          members={members}
+          isAdmin={false} // Read-only preview from dashboard
+          onClose={() => setSelectedEvent(null)}
+          onEdit={() => {}}
+          onDelete={() => {}}
+        />
       )}
     </div>
   );

@@ -9,6 +9,8 @@ export interface UserProfile {
   photoURL: string;
   role: UserRole;
   createdAt: Date | Timestamp;
+  username?: string;
+  password?: string;
 }
 
 export interface Category {

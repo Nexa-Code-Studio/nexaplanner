@@ -43,9 +43,7 @@ async function handleReminders(request: Request) {
     // If it's a test trigger, send a test payload and exit
     if (isTest) {
       const testPayload = {
-        username: "NexaPlanner BOT",
-        avatar_url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=128&h=128&q=80",
-        content: "@everyone",
+        content: `@everyone ${settings.discordMessage || "Oi, reminder nih!"} (Ini adalah pesan uji coba integrasi)`,
         embeds: [
           {
             title: "🔔 Uji Coba Integrasi NexaPlanner",
@@ -165,9 +163,7 @@ async function handleReminders(request: Request) {
     }
 
     const payload = {
-      username: "NexaPlanner BOT",
-      avatar_url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=128&h=128&q=80",
-      content: "@everyone",
+      content: `@everyone ${settings.discordMessage || "Oi, reminder nih!"}`,
       embeds: [
         {
           title: "📢 Pengingat Agenda NexaCode",
