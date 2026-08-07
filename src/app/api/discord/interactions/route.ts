@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 
+import { GET as getTimelineImage } from "../timeline-image/route";
+
 export const dynamic = "force-dynamic";
 
 function verifyDiscordRequest(
@@ -77,14 +79,14 @@ export async function POST(request: Request) {
         if (paramOpt) parameter = paramOpt.value;
       }
 
-      // We perform the asynchronous processing
       const host = request.headers.get("host") || "localhost:3000";
       const protocol = host.includes("localhost") ? "http" : "https";
 
       const processDeferred = async () => {
         try {
           const imageUrl = `${protocol}://${host}/api/discord/timeline-image?filter=${filter}&parameter=${encodeURIComponent(parameter)}`;
-          const imageRes = await fetch(imageUrl);
+          // Call image generator in-process directly to bypass HTTP network calls/cold starts
+          const imageRes = await getTimelineImage(new Request(imageUrl));
 
           if (!imageRes.ok) {
             throw new Error(`Failed to generate timeline image: status ${imageRes.status}`);
@@ -113,7 +115,7 @@ export async function POST(request: Request) {
             console.error("Discord callback failed:", errText);
           }
         } catch (err) {
-          console.error("Background task failed:", err);
+          console.error("Deferred processing failed:", err);
           // Attempt to update Discord message with error text
           try {
             const callbackUrl = `https://discord.com/api/v10/webhooks/${applicationId}/${interactionToken}/messages/@original`;
@@ -130,18 +132,8 @@ export async function POST(request: Request) {
         }
       };
 
-      // Keep serverless function alive on platforms supporting waitUntil
-      try {
-        const { waitUntil } = require("next/server");
-        if (waitUntil) {
-          waitUntil(processDeferred());
-        } else {
-          // If no waitUntil, trigger it and let it run, or await briefly
-          processDeferred();
-        }
-      } catch (e) {
-        processDeferred();
-      }
+      // Await the task synchronously in-process to guarantee Vercel doesn't freeze the function
+      await processDeferred();
 
       // Respond immediately with Deferred Message type (5) to satisfy Discord's 3s limit
       return NextResponse.json({
