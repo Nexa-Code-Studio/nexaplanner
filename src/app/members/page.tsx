@@ -49,6 +49,8 @@ export default function MembersPage() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState<"admin" | "member">("member");
+  const [editUsername, setEditUsername] = useState("");
+  const [editPassword, setEditPassword] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -72,6 +74,8 @@ export default function MembersPage() {
   const handleOpenEdit = (m: any) => {
     setSelectedMember(m);
     setRole(m.role || "member");
+    setEditUsername(m.username || m.email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, ""));
+    setEditPassword("");
     setFormError(null);
     setIsEditOpen(true);
   };
@@ -110,15 +114,23 @@ export default function MembersPage() {
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedMember) return;
+    if (!editUsername.trim()) {
+      setFormError("Username wajib diisi");
+      return;
+    }
 
     setIsSubmitting(true);
     setFormError(null);
     try {
-      await updateMember(selectedMember.uid, role);
+      await updateMember(selectedMember.uid, {
+        role,
+        username: editUsername.trim(),
+        password: editPassword.trim() || undefined,
+      });
       setIsEditOpen(false);
-      showToast(`Akses role untuk ${selectedMember.email} berhasil diperbarui!`, "success");
+      showToast(`Data anggota ${selectedMember.email} berhasil diperbarui!`, "success");
     } catch (err: any) {
-      setFormError(err.message || "Gagal memperbarui role");
+      setFormError(err.message || "Gagal memperbarui data anggota");
     } finally {
       setIsSubmitting(false);
     }
@@ -540,6 +552,31 @@ export default function MembersPage() {
                   disabled
                   value={selectedMember.email}
                   className="w-full px-3 py-2 text-sm bg-slate-100 border border-border rounded-xl opacity-70 text-muted-foreground font-mono"
+                />
+              </div>
+
+              {/* Username Field */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-muted-foreground">Username Anggota</label>
+                <input
+                  type="text"
+                  value={editUsername}
+                  onChange={(e) => setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ""))}
+                  placeholder="Masukkan username..."
+                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-border rounded-xl focus:bg-white outline-none focus:border-primary-500 transition-all text-foreground font-mono font-semibold"
+                  required
+                />
+              </div>
+
+              {/* Reset Password Field */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-muted-foreground">Reset Password (Kosongkan jika tidak diubah)</label>
+                <input
+                  type="password"
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                  placeholder="Masukkan password baru..."
+                  className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-border rounded-xl focus:bg-white outline-none focus:border-primary-500 transition-all text-foreground font-semibold"
                 />
               </div>
 

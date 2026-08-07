@@ -37,6 +37,21 @@ export class MemberService {
       }
     }
 
+    if (data.username) {
+      const normalizedUsername = data.username.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+      if (!normalizedUsername) {
+        throw new Error("Username harus diisi huruf dan angka saja");
+      }
+      data.username = normalizedUsername;
+      if (normalizedUsername !== existing.username) {
+        const allMembers = await this.repository.findAll();
+        const dup = allMembers.find(m => m.username === normalizedUsername && m.uid !== uid);
+        if (dup) {
+          throw new Error("Username sudah terdaftar pada pengguna lain");
+        }
+      }
+    }
+
     return this.repository.update(uid, data);
   }
 

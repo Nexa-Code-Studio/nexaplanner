@@ -72,7 +72,7 @@ export function useMembers() {
     return result.data;
   };
 
-  const updateMember = async (id: string, role: "admin" | "member") => {
+  const updateMember = async (id: string, updates: { role?: "admin" | "member"; username?: string; password?: string }) => {
     if (!user) {
       throw new Error("Pengguna tidak terautentikasi");
     }
@@ -84,12 +84,12 @@ export function useMembers() {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${idToken}`,
       },
-      body: JSON.stringify({ role }),
+      body: JSON.stringify(updates),
     });
 
     const result = await response.json();
     if (!result.success) {
-      throw new Error(result.message || "Gagal memperbarui role anggota");
+      throw new Error(result.message || "Gagal memperbarui anggota");
     }
 
     await fetchMembers();
