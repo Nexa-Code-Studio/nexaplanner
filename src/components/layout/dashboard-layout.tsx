@@ -57,7 +57,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Navbar onMenuClick={() => setIsSidebarOpen(true)} />
         
-        <main className="flex-1 overflow-y-auto px-6 py-8 relative focus:outline-none">
+        <main className="flex-1 overflow-y-auto px-6 py-8 focus:outline-none">
           <div className="max-w-7xl mx-auto animate-fade-in">
             {children}
           </div>
