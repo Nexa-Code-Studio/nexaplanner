@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import crypto from "crypto";
 
 import { GET as getTimelineImage } from "../timeline-image/route";
@@ -132,8 +132,10 @@ export async function POST(request: Request) {
         }
       };
 
-      // Await the task synchronously in-process to guarantee Vercel doesn't freeze the function
-      await processDeferred();
+      // Register the task to run in the background after the response is sent to Discord
+      after(() => {
+        processDeferred();
+      });
 
       // Respond immediately with Deferred Message type (5) to satisfy Discord's 3s limit
       return NextResponse.json({
