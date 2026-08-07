@@ -17,13 +17,38 @@ export default function MiniCalendar({ events, categories, members, isAdmin }: M
   const router = useRouter();
   const [selectedDayEvents, setSelectedDayEvents] = useState<Event[] | null>(null);
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth();
 
   const monthName = today.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+
+  const PREDEFINED_COLORS = [
+    { name: "Blue", bg: "bg-blue-500", text: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20" },
+    { name: "Emerald", bg: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20" },
+    { name: "Green", bg: "bg-green-500", text: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10 border-green-100 dark:border-green-500/20" },
+    { name: "Teal", bg: "bg-teal-500", text: "text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-500/10 border-teal-100 dark:border-teal-500/20" },
+    { name: "Cyan", bg: "bg-cyan-500", text: "text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 border-cyan-100 dark:border-cyan-500/20" },
+    { name: "Sky", bg: "bg-sky-500", text: "text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-500/10 border-sky-100 dark:border-sky-500/20" },
+    { name: "Indigo", bg: "bg-indigo-500", text: "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border-indigo-100 dark:border-indigo-500/20" },
+    { name: "Violet", bg: "bg-violet-500", text: "text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-500/10 border-violet-100 dark:border-violet-500/20" },
+    { name: "Purple", bg: "bg-purple-500", text: "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 border-purple-100 dark:border-purple-500/20" },
+    { name: "Fuchsia", bg: "bg-fuchsia-500", text: "text-fuchsia-600 dark:text-fuchsia-400 bg-fuchsia-50 dark:bg-fuchsia-500/10 border-fuchsia-100 dark:border-fuchsia-500/20" },
+    { name: "Pink", bg: "bg-pink-500", text: "text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-500/10 border-pink-100 dark:border-pink-500/20" },
+    { name: "Rose", bg: "bg-rose-500", text: "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border-rose-100 dark:border-rose-500/20" },
+    { name: "Red", bg: "bg-red-500", text: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20" },
+    { name: "Orange", bg: "bg-orange-500", text: "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 border-orange-100 dark:border-orange-500/20" },
+    { name: "Amber", bg: "bg-amber-500", text: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20" },
+    { name: "Yellow", bg: "bg-yellow-500", text: "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-500/10 border-yellow-100 dark:border-yellow-500/20" },
+    { name: "Lime", bg: "bg-lime-500", text: "text-lime-600 dark:text-lime-400 bg-lime-50 dark:bg-lime-500/10 border-lime-100 dark:border-lime-500/20" },
+    { name: "Slate", bg: "bg-slate-500", text: "text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-500/10 border-slate-100 dark:border-slate-500/20" },
+  ];
+
+  const getColorClasses = (colorBg: string) => {
+    const matched = PREDEFINED_COLORS.find(c => c.bg === colorBg);
+    return matched ? matched.text : "text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-500/10 border border-slate-100 dark:border-slate-500/20";
+  };
 
   const cells = useMemo(() => {
     const startOfMonth = new Date(year, month, 1);
@@ -171,19 +196,26 @@ export default function MiniCalendar({ events, categories, members, isAdmin }: M
               </button>
             </div>
             
-            <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-              {selectedDayEvents.map((evt) => (
-                <div
-                  key={evt.id}
-                  onClick={() => setSelectedEvent(evt)}
-                  className="p-3 bg-slate-50/50 dark:bg-slate-900/30 border border-border/50 rounded-xl space-y-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                >
-                  <span className="font-bold text-foreground text-xs block">{evt.title}</span>
-                  {evt.location && (
-                    <span className="text-[9px] text-muted-foreground block">📍 {evt.location}</span>
-                  )}
-                </div>
-              ))}
+            <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+              {selectedDayEvents.map((evt) => {
+                const cat = categories.find((c) => c.id === evt.categoryId) || { name: "Tanpa Kategori", color: "bg-slate-500" };
+                return (
+                  <div
+                    key={evt.id}
+                    className="p-3 bg-slate-50/50 dark:bg-slate-900/30 border border-border/50 rounded-xl space-y-1.5 text-left"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="font-bold text-foreground text-xs block">{evt.title}</span>
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold border shrink-0 ${getColorClasses(cat.color)}`}>
+                        {cat.name}
+                      </span>
+                    </div>
+                    {evt.location && (
+                      <span className="text-[9px] text-muted-foreground block">📍 {evt.location}</span>
+                    )}
+                  </div>
+                );
+              })}
               
               {selectedDayEvents.length === 0 && (
                 <p className="text-xs text-muted-foreground italic text-center py-6">
@@ -202,18 +234,6 @@ export default function MiniCalendar({ events, categories, members, isAdmin }: M
         </div>
       )}
 
-      {/* Main Event Detail Modal Sync */}
-      {selectedEvent && (
-        <EventDetailDialog
-          event={selectedEvent}
-          categories={categories}
-          members={members}
-          isAdmin={false} // Read-only preview from dashboard
-          onClose={() => setSelectedEvent(null)}
-          onEdit={() => {}}
-          onDelete={() => {}}
-        />
-      )}
     </div>
   );
 }
