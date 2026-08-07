@@ -197,10 +197,18 @@ async function handleReminders(request: Request) {
     const bodyText = sections.join(`\n\n${separator}\n\n`);
 
     const greeting = settings.discordMessage || "Oi, reminder nih!";
-    const fullMessage = `@everyone ${greeting}\n\n📅 NexaPlanner Reminder\n\nAda ${totalCount} agenda yang perlu diperhatikan.\n\n${separator}\n\n${bodyText}\n\n${separator}\n\n🤖 NexaPlanner`;
+    const embedDescription = `Ada ${totalCount} agenda yang perlu diperhatikan.\n\n${separator}\n\n${bodyText}\n\n${separator}\n\n🤖 NexaPlanner`;
 
     const payload = {
-      content: fullMessage
+      content: `@everyone ${greeting}`,
+      embeds: [
+        {
+          title: "📅 NexaPlanner Reminder",
+          description: embedDescription,
+          color: 2445803, // Hex #2563EB -> decimal
+          timestamp: new Date().toISOString(),
+        }
+      ]
     };
 
     const res = await fetch(webhookUrl, {
