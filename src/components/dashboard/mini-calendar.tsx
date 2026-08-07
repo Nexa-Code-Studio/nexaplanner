@@ -28,16 +28,14 @@ export default function MiniCalendar({ events, categories, members, isAdmin }: M
   const cells = useMemo(() => {
     const startOfMonth = new Date(year, month, 1);
     const endOfMonth = new Date(year, month + 1, 0);
-
     const daysInMonth = endOfMonth.getDate();
-    // Normalize Monday to index 0, Sunday to index 6
     const startDayOfWeek = (startOfMonth.getDay() - 1 + 7) % 7;
 
-    const calendarCells: { day: number | null; hasEvent: boolean; isToday: boolean }[] = [];
+    const calendarCells: { day: number | null; colors: string[]; isToday: boolean }[] = [];
 
     // Previous month paddings
     for (let i = 0; i < startDayOfWeek; i++) {
-      calendarCells.push({ day: null, hasEvent: false, isToday: false });
+      calendarCells.push({ day: null, colors: [], isToday: false });
     }
 
     // Current month days
@@ -45,8 +43,8 @@ export default function MiniCalendar({ events, categories, members, isAdmin }: M
       const checkDate = new Date(year, month, d);
       checkDate.setHours(0, 0, 0, 0);
 
-      // Check if any event overlaps with this day
-      const hasEvent = events.some((evt) => {
+      // Find events overlapping with this day
+      const dayEvents = events.filter((evt) => {
         const start = new Date((evt.startDate as any).seconds ? (evt.startDate as any).seconds * 1000 : (evt.startDate as any));
         start.setHours(0, 0, 0, 0);
         const end = new Date((evt.endDate as any).seconds ? (evt.endDate as any).seconds * 1000 : (evt.endDate as any));
@@ -54,17 +52,27 @@ export default function MiniCalendar({ events, categories, members, isAdmin }: M
         return checkDate >= start && checkDate <= end;
       });
 
+      // Get unique category colors
+      const colors = Array.from(
+        new Set(
+          dayEvents.map((evt) => {
+            const cat = categories.find((c) => c.id === evt.categoryId);
+            return cat ? cat.color : "bg-slate-500";
+          })
+        )
+      );
+
       const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
 
-      calendarCells.push({ day: d, hasEvent, isToday });
+      calendarCells.push({ day: d, colors, isToday });
     }
 
     return calendarCells;
-  }, [events, year, month]);
+  }, [events, categories, year, month]);
 
   const weekdays = ["S", "S", "R", "K", "J", "S", "M"];
 
-  const handleDateClick = (cell: { day: number | null; hasEvent: boolean; isToday: boolean }) => {
+  const handleDateClick = (cell: { day: number | null; colors: string[]; isToday: boolean }) => {
     if (!cell.day) return;
     
     const clickedDate = new Date(year, month, cell.day);
@@ -121,8 +129,17 @@ export default function MiniCalendar({ events, categories, members, isAdmin }: M
               }`}
             >
               {cell.day}
-              {cell.hasEvent && cell.day && (
-                <span className={`absolute bottom-1 h-1 w-1 rounded-full ${cell.isToday ? "bg-white" : "bg-primary-500"}`} />
+              {cell.day && cell.colors && cell.colors.length > 0 && (
+                <div className="absolute bottom-1 flex items-center justify-center gap-0.5 max-w-[24px]">
+                  {cell.colors.slice(0, 3).map((color, cIdx) => (
+                    <span 
+                      key={cIdx} 
+                      className={`h-1 w-1 rounded-full ${
+                        cell.isToday ? "bg-white" : color
+                      }`} 
+                    />
+                  ))}
+                </div>
               )}
             </div>
           ))}
