@@ -67,6 +67,10 @@ export async function POST(request: Request) {
     const applicationId = payload.application_id;
     const interactionToken = payload.token;
 
+    // Extract triggering user ID for mention tag
+    const userObj = payload.member ? payload.member.user : payload.user;
+    const userId = userObj ? userObj.id : null;
+
     if (commandName === "timeline" || commandName === "visualize") {
       let filter = "month-this";
       let parameter = "";
@@ -97,7 +101,7 @@ export async function POST(request: Request) {
           // Prepare multipart form data payload for Discord callback
           const formData = new FormData();
           const payloadJson = JSON.stringify({
-            content: "Berikut adalah visualisasi timeline rencana event tim:",
+            content: userId ? `<@${userId}> Berikut adalah visualisasi timeline rencana event tim:` : "Berikut adalah visualisasi timeline rencana event tim:",
             attachments: [{ id: 0, filename: "timeline.png" }],
           });
 
