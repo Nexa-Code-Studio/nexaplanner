@@ -272,6 +272,7 @@ export default function MembersPage() {
               <thead>
                 <tr className="border-b border-border bg-slate-50/50 dark:bg-slate-900/30 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   <th className="px-6 py-4">Anggota</th>
+                  <th className="px-6 py-4">Username</th>
                   <th className="px-6 py-4">Alamat Email</th>
                   <th className="px-6 py-4">Role Akses</th>
                   <th className="px-6 py-4">Terdaftar</th>
@@ -310,6 +311,11 @@ export default function MembersPage() {
                         </div>
                       </td>
 
+                      {/* Username */}
+                      <td className="px-6 py-4 text-muted-foreground font-mono text-xs">
+                        <span>@{member.username || member.email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "")}</span>
+                      </td>
+ 
                       {/* Email */}
                       <td className="px-6 py-4 text-muted-foreground font-medium">
                         <span className="inline-flex items-center gap-1.5">
