@@ -45,10 +45,10 @@ export default function EventsPage() {
   // Search & Filter State
   const [search, setSearch] = useState("");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "upcoming" | "ongoing" | "finished">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "upcoming" | "ongoing" | "finished">("upcoming");
   const [startDateFilter, setStartDateFilter] = useState("");
   const [endDateFilter, setEndDateFilter] = useState("");
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "startDate" | "endDate" | "alphabetical">("newest");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "startDate" | "endDate" | "alphabetical">("endDate");
 
   // Modal States
   const [isAddOpen, setIsAddOpen] = useState(false);
