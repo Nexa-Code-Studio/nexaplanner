@@ -5,6 +5,7 @@ import {
   browserLocalPersistence, 
   browserSessionPersistence, 
   inMemoryPersistence, 
+  browserPopupRedirectResolver,
   GoogleAuthProvider 
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -28,7 +29,8 @@ export const auth = (() => {
   }
   try {
     return initializeAuth(app, {
-      persistence: [browserLocalPersistence, browserSessionPersistence, inMemoryPersistence]
+      persistence: [browserLocalPersistence, browserSessionPersistence, inMemoryPersistence],
+      popupRedirectResolver: browserPopupRedirectResolver,
     });
   } catch (err) {
     return getAuth(app);
