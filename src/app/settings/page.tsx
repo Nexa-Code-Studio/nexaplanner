@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import PageHeader from "@/components/layout/page-header";
-import { Save, ShieldAlert, Sparkles, Send, Clock, Bell, User, Loader2 } from "lucide-react";
+import { Save, ShieldAlert, Sparkles, Send, Clock, Bell, User, Loader2, BellRing } from "lucide-react";
 
 export default function SettingsPage() {
   const { user, profile, loading } = useAuth();
@@ -24,6 +24,7 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
+  const [isSendingReminders, setIsSendingReminders] = useState(false);
   const [testResult, setTestResult] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   useEffect(() => {
@@ -124,6 +125,32 @@ export default function SettingsPage() {
       setTimeout(() => setTestResult(null), 4000);
     }
   };
+  const handleTriggerReminders = async () => {
+    setIsSendingReminders(true);
+    setTestResult(null);
+    try {
+      const res = await fetch("/api/cron/reminders", {
+        method: "POST"
+      });
+      const result = await res.json();
+      if (result.success) {
+        setTestResult({ 
+          type: "success", 
+          message: result.message || "Pengingat harian berhasil dikirim ke Discord sekarang!" 
+        });
+      } else {
+        setTestResult({ 
+          type: "error", 
+          message: result.message || "Gagal mengirim pengingat harian" 
+        });
+      }
+    } catch (err: any) {
+      setTestResult({ type: "error", message: err.message || "Terjadi kesalahan" });
+    } finally {
+      setIsSendingReminders(false);
+      setTimeout(() => setTestResult(null), 5000);
+    }
+  };
 
   if (isLoadingSettings) {
     return (
@@ -182,19 +209,36 @@ export default function SettingsPage() {
                 <Bell className="h-5 w-5 text-primary-500" />
                 <h2 className="text-base font-bold text-foreground">Integrasi Discord Webhook</h2>
               </div>
-              <button
-                type="button"
-                onClick={handleTestWebhook}
-                disabled={isTestingWebhook || !discordWebhookUrl}
-                className="inline-flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-900/80 border border-border rounded-xl px-3.5 py-1.5 text-xs font-bold text-primary-500 transition-colors cursor-pointer disabled:opacity-50"
-              >
-                {isTestingWebhook ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Send className="h-3 w-3" />
-                )}
-                <span>Kirim Uji Coba</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleTestWebhook}
+                  disabled={isTestingWebhook || !discordWebhookUrl}
+                  className="inline-flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-900/80 border border-border rounded-xl px-3.5 py-1.5 text-xs font-bold text-primary-500 transition-colors cursor-pointer disabled:opacity-50"
+                  title="Kirim pesan uji coba untuk verifikasi koneksi webhook"
+                >
+                  {isTestingWebhook ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Send className="h-3 w-3" />
+                  )}
+                  <span>Kirim Uji Coba</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTriggerReminders}
+                  disabled={isSendingReminders || !discordWebhookUrl}
+                  className="inline-flex items-center gap-1.5 bg-primary-500 hover:bg-primary-600 border border-transparent rounded-xl px-3.5 py-1.5 text-xs font-bold text-white transition-colors cursor-pointer disabled:opacity-50"
+                  title="Kirim semua pengingat interval waktu (H-0, H-1, H-3, H-7) sekarang juga"
+                >
+                  {isSendingReminders ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <BellRing className="h-3 w-3" />
+                  )}
+                  <span>Kirim Pengingat Sekarang</span>
+                </button>
+              </div>
             </div>
             
             <div className="space-y-4">
