@@ -34,7 +34,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
   };
 
   return (
-    <header className="flex items-center justify-between px-6 h-16 bg-white dark:bg-card border-b border-border sticky top-0 z-10">
+    <header className="flex items-center justify-between px-6 h-16 bg-white dark:bg-card border-b border-border sticky top-0">
       {/* Search Bar / Left Section */}
       <div className="flex items-center gap-4 flex-1">
         <button
