@@ -415,7 +415,7 @@ export default function EventsPage() {
                   <th className="px-6 py-4">Waktu Pelaksanaan</th>
                   <th className="px-6 py-4">Durasi</th>
                   <th className="px-6 py-4">Lokasi</th>
-                  <th className="px-6 py-4">Penyelenggara</th>
+                  <th className="px-6 py-4">Deskripsi</th>
                   {isAdmin && <th className="px-6 py-4 text-right">Aksi</th>}
                 </tr>
               </thead>
@@ -426,18 +426,11 @@ export default function EventsPage() {
                   return (
                     <tr key={evt.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-900/30 transition-colors">
                       
-                      {/* Event Title + Status indicator */}
+                      {/* Event Title */}
                       <td className="px-6 py-4">
-                        <div className="space-y-0.5">
-                          <span className="font-bold text-foreground block max-w-xs truncate" title={evt.title}>
-                            {evt.title}
-                          </span>
-                          {evt.description && (
-                            <span className="text-xs text-muted-foreground block max-w-xs truncate" title={evt.description}>
-                              {evt.description}
-                            </span>
-                          )}
-                        </div>
+                        <span className="font-bold text-foreground block max-w-xs truncate" title={evt.title}>
+                          {evt.title}
+                        </span>
                       </td>
 
                       {/* Category Color badge */}
@@ -478,12 +471,13 @@ export default function EventsPage() {
                         )}
                       </td>
 
-                      {/* Creator */}
-                      <td className="px-6 py-4 text-muted-foreground font-medium">
-                        <span className="inline-flex items-center gap-1 text-xs">
-                          <User className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
-                          <span>{getCreatorName(evt.createdBy)}</span>
-                        </span>
+                      {/* Description */}
+                      <td className="px-6 py-4 text-muted-foreground font-medium max-w-xs truncate" title={evt.description}>
+                        {evt.description ? (
+                          <span>{evt.description}</span>
+                        ) : (
+                          <span className="text-slate-400 dark:text-slate-600 font-medium italic text-[11.5px]">Tidak ada deskripsi</span>
+                        )}
                       </td>
 
                       {/* Actions Column (Admin Only) */}
