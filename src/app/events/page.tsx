@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import PageHeader from "@/components/layout/page-header";
 import EventForm from "@/components/event-form";
@@ -235,6 +235,19 @@ export default function EventsPage() {
       return getCreatedMs(b.createdAt) - getCreatedMs(a.createdAt);
     });
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedCategoryFilter, statusFilter, startDateFilter, endDateFilter, sortBy]);
+
+  const totalPages = Math.ceil(filteredAndSorted.length / itemsPerPage);
+  const paginatedEvents = filteredAndSorted.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   // Predefined Category pill styles (match categories module)
   const PREDEFINED_BADGES: Record<string, string> = {
     "bg-blue-500": "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20",
@@ -407,7 +420,7 @@ export default function EventsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 text-sm">
-                {filteredAndSorted.map((evt) => {
+                {paginatedEvents.map((evt) => {
                   const cat = getCategoryDetails(evt.categoryId);
                   const status = getEventStatus(evt.startDate, evt.endDate);
                   return (
@@ -500,6 +513,47 @@ export default function EventsPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="px-6 py-4 flex items-center justify-between border-t border-border bg-slate-50/30 dark:bg-slate-900/10 text-xs font-semibold text-muted-foreground select-none">
+              <div>
+                Menampilkan <span className="text-foreground font-bold">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredAndSorted.length)}</span> sampai <span className="text-foreground font-bold">{Math.min(currentPage * itemsPerPage, filteredAndSorted.length)}</span> dari <span className="text-foreground font-bold">{filteredAndSorted.length}</span> event
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 border border-border rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 transition-colors cursor-pointer"
+                >
+                  Sebelumnya
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    type="button"
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`h-7 w-7 rounded-lg border transition-all cursor-pointer ${
+                      currentPage === page
+                        ? "bg-primary-500 text-white border-transparent shadow-xs"
+                        : "border-border hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 border border-border rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 transition-colors cursor-pointer"
+                >
+                  Selanjutnya
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-white dark:bg-card border border-border rounded-2xl p-12 text-center shadow-sm max-w-lg mx-auto space-y-4">

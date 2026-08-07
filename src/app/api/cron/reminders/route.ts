@@ -43,7 +43,7 @@ async function handleReminders(request: Request) {
     // If it's a test trigger, send a test payload and exit
     if (isTest) {
       const testPayload = {
-        content: `@everyone ${settings.discordMessage || "Oi, reminder nih!"} (Ini adalah pesan uji coba integrasi)`,
+        content: `@everyone ${settings.discordMessage || "Oi, reminder nih!"}`,
         embeds: [
           {
             title: "🔔 Uji Coba Integrasi NexaPlanner",
@@ -95,10 +95,50 @@ async function handleReminders(request: Request) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const formatToIndoDate = (dateVal: any) => {
-      const d = new Date(dateVal);
-      return d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+    const parseFirebaseDate = (dateVal: any): Date => {
+      if (!dateVal) return new Date();
+      if (dateVal.seconds !== undefined) return new Date(dateVal.seconds * 1000);
+      if (dateVal._seconds !== undefined) return new Date(dateVal._seconds * 1000);
+      return new Date(dateVal);
     };
+
+    function formatIndoDateRange(startVal: any, endVal: any): string {
+      const start = parseFirebaseDate(startVal);
+      const end = parseFirebaseDate(endVal);
+
+      const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
+      const startDay = start.getDate();
+      const startMonth = months[start.getMonth()];
+      const startYear = start.getFullYear();
+
+      const endDay = end.getDate();
+      const endMonth = months[end.getMonth()];
+      const endYear = end.getFullYear();
+
+      // 1. Same day
+      if (startDay === endDay && startMonth === endMonth && startYear === endYear) {
+        return `${startDay} ${startMonth} ${startYear}`;
+      }
+
+      // 2. Same month and same year
+      if (startMonth === endMonth && startYear === endYear) {
+        return `${startDay}–${endDay} ${startMonth} ${startYear}`;
+      }
+
+      // 3. Different month, same year
+      if (startYear === endYear) {
+        return `${startDay} ${startMonth} – ${endDay} ${endMonth} ${startYear}`;
+      }
+
+      // 4. Different year
+      return `${startDay} ${startMonth} ${startYear} – ${endDay} ${endMonth} ${endYear}`;
+    }
+
+    const isH0Enabled = settings.isH0Enabled !== false;
+    const isH1Enabled = settings.isH1Enabled !== false;
+    const isH3Enabled = settings.isH3Enabled !== false;
+    const isH7Enabled = settings.isH7Enabled !== false;
 
     // Group matching reminders
     const h0Events: string[] = [];
@@ -107,21 +147,22 @@ async function handleReminders(request: Request) {
     const h7Events: string[] = [];
 
     for (const evt of events) {
-      const start = new Date(evt.startDate as any);
+      const start = parseFirebaseDate(evt.startDate);
       start.setHours(0, 0, 0, 0);
 
       const diffTime = start.getTime() - today.getTime();
       const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-      const eventString = `• **${evt.title}** (${getCategoryName(evt.categoryId)}) \n  📅 ${formatToIndoDate(evt.startDate as any)} s/d ${formatToIndoDate(evt.endDate as any)}${evt.location ? `\n  📍 Location: ${evt.location}` : ""}`;
+      const dateRangeStr = formatIndoDateRange(evt.startDate, evt.endDate);
+      const eventString = `📌 ${evt.title}\n📅 ${getCategoryName(evt.categoryId)} (${dateRangeStr})${evt.location ? `\n📍 ${evt.location}` : ""}`;
 
-      if (diffDays === 0 && settings.isH0Enabled) {
+      if (diffDays === 0 && isH0Enabled) {
         h0Events.push(eventString);
-      } else if (diffDays === 1 && settings.isH1Enabled) {
+      } else if (diffDays === 1 && isH1Enabled) {
         h1Events.push(eventString);
-      } else if (diffDays === 3 && settings.isH3Enabled) {
+      } else if (diffDays === 3 && isH3Enabled) {
         h3Events.push(eventString);
-      } else if (diffDays === 7 && settings.isH7Enabled) {
+      } else if (diffDays === 7 && isH7Enabled) {
         h7Events.push(eventString);
       }
     }
@@ -131,51 +172,35 @@ async function handleReminders(request: Request) {
       return NextResponse.json({ success: true, message: "Tidak ada pengingat agenda untuk dikirim hari ini." });
     }
 
-    // 4. Construct beautiful embeds fields
-    const fields: any[] = [];
+    // 4. Construct clean, separator-based plain text message
+    const separator = "━━━━━━━━━━━━━━━━━━";
+    const sections: string[] = [];
+    let totalCount = 0;
+
     if (h0Events.length > 0) {
-      fields.push({
-        name: "🚨 Agenda Hari Ini (H-0)",
-        value: h0Events.join("\n\n"),
-        inline: false,
-      });
+      totalCount += h0Events.length;
+      sections.push(`🔴 HARI INI\n\n${h0Events.join("\n\n")}`);
     }
     if (h1Events.length > 0) {
-      fields.push({
-        name: "🔔 Agenda Besok (H-1)",
-        value: h1Events.join("\n\n"),
-        inline: false,
-      });
+      totalCount += h1Events.length;
+      sections.push(`🟡 BESOK\n\n${h1Events.join("\n\n")}`);
     }
     if (h3Events.length > 0) {
-      fields.push({
-        name: "⏳ Agenda 3 Hari Lagi (H-3)",
-        value: h3Events.join("\n\n"),
-        inline: false,
-      });
+      totalCount += h3Events.length;
+      sections.push(`🟢 H-3\n\n${h3Events.join("\n\n")}`);
     }
     if (h7Events.length > 0) {
-      fields.push({
-        name: "📅 Agenda 7 Hari Lagi (H-7)",
-        value: h7Events.join("\n\n"),
-        inline: false,
-      });
+      totalCount += h7Events.length;
+      sections.push(`🔵 H-7\n\n${h7Events.join("\n\n")}`);
     }
 
+    const bodyText = sections.join(`\n\n${separator}\n\n`);
+
+    const greeting = settings.discordMessage || "Oi, reminder nih!";
+    const fullMessage = `@everyone ${greeting}\n\n📅 NexaPlanner Reminder\n\nAda ${totalCount} agenda yang perlu diperhatikan.\n\n${separator}\n\n${bodyText}\n\n${separator}\n\n🤖 NexaPlanner`;
+
     const payload = {
-      content: `@everyone ${settings.discordMessage || "Oi, reminder nih!"}`,
-      embeds: [
-        {
-          title: "📢 Pengingat Agenda NexaCode",
-          description: "Halo Tim! Berikut adalah agenda terdekat yang memerlukan perhatian kita:",
-          color: 2445803,
-          fields,
-          footer: {
-            text: "NexaPlanner Auto-Reminder",
-          },
-          timestamp: new Date().toISOString(),
-        }
-      ]
+      content: fullMessage
     };
 
     const res = await fetch(webhookUrl, {

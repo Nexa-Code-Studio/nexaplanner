@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import PageHeader from "@/components/layout/page-header";
 import { useCategories } from "@/hooks/use-categories";
@@ -197,6 +197,19 @@ export default function CategoriesPage() {
       }
     });
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, sortBy]);
+
+  const totalPages = Math.ceil(filteredAndSorted.length / itemsPerPage);
+  const paginatedCategories = filteredAndSorted.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const formatFirebaseDate = (createdAt: any) => {
     if (!createdAt) return "-";
     const seconds = createdAt._seconds !== undefined ? createdAt._seconds : createdAt.seconds;
@@ -295,7 +308,7 @@ export default function CategoriesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60 text-sm">
-                {filteredAndSorted.map((cat) => (
+                {paginatedCategories.map((cat) => (
                   <tr key={cat.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-900/30 transition-colors">
                     {/* Color Preview */}
                     <td className="px-6 py-4">
@@ -355,6 +368,47 @@ export default function CategoriesPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="px-6 py-4 flex items-center justify-between border-t border-border bg-slate-50/30 dark:bg-slate-900/10 text-xs font-semibold text-muted-foreground select-none">
+              <div>
+                Menampilkan <span className="text-foreground font-bold">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredAndSorted.length)}</span> sampai <span className="text-foreground font-bold">{Math.min(currentPage * itemsPerPage, filteredAndSorted.length)}</span> dari <span className="text-foreground font-bold">{filteredAndSorted.length}</span> kategori
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 border border-border rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 transition-colors cursor-pointer"
+                >
+                  Sebelumnya
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    type="button"
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`h-7 w-7 rounded-lg border transition-all cursor-pointer ${
+                      currentPage === page
+                        ? "bg-primary-500 text-white border-transparent shadow-xs"
+                        : "border-border hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 border border-border rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 transition-colors cursor-pointer"
+                >
+                  Selanjutnya
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-white dark:bg-card border border-border rounded-2xl p-12 text-center shadow-sm max-w-lg mx-auto space-y-4">

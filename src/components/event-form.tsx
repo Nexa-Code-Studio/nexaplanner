@@ -112,6 +112,9 @@ export default function EventForm({
       return;
     }
 
+    const selectedCat = categories.find(c => c.id === categoryId);
+    const resolvedColor = selectedCat ? selectedCat.color : "bg-blue-500";
+
     try {
       await onSubmit({
         title: title.trim(),
@@ -120,7 +123,7 @@ export default function EventForm({
         startDate,
         endDate,
         location: location.trim(),
-        color,
+        color: resolvedColor,
       });
     } catch (err: any) {
       setError(err.message || "Gagal menyimpan event");
@@ -236,29 +239,7 @@ export default function EventForm({
         />
       </div>
 
-      {/* Event Color Picker */}
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-muted-foreground block">Pilih Warna Event</label>
-        <div className="flex flex-wrap gap-2.5 items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-border/50">
-          {EVENT_COLORS.map((item) => (
-            <button
-              key={item.bg}
-              type="button"
-              onClick={() => setColor(item.bg)}
-              className={`h-6.5 w-6.5 rounded-full ${item.bg} border-2 transition-all cursor-pointer relative flex items-center justify-center ${
-                color === item.bg 
-                  ? "border-primary-500 scale-110 shadow-sm" 
-                  : "border-transparent hover:scale-105"
-              }`}
-              title={item.name}
-            >
-              {color === item.bg && (
-                <CheckCircle className="h-3.5 w-3.5 text-white bg-primary-500/80 rounded-full" />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
+
 
       {/* Actions Footer */}
       <div className="flex items-center justify-end gap-3 pt-3 border-t border-border mt-6">
