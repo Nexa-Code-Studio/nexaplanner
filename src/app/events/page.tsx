@@ -28,7 +28,7 @@ import {
   FileSpreadsheet
 } from "lucide-react";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 
 export default function EventsPage() {
   const { profile } = useAuth();
@@ -220,7 +220,7 @@ export default function EventsPage() {
       ]);
 
       // Draw table via autoTable plugin
-      (doc as any).autoTable({
+      autoTable(doc, {
         head: [tableHeaders],
         body: tableRows,
         startY: 38,
