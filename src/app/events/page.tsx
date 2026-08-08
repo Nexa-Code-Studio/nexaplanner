@@ -23,8 +23,12 @@ import {
   AlertTriangle,
   HelpCircle,
   Tag,
-  Loader2
+  Loader2,
+  Download,
+  FileSpreadsheet
 } from "lucide-react";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 export default function EventsPage() {
   const { profile } = useAuth();
@@ -117,6 +121,130 @@ export default function EventsPage() {
       month: "short",
       year: "numeric",
     });
+  };
+
+  const handleExportCSV = () => {
+    if (filteredAndSorted.length === 0) {
+      showToast("Tidak ada data event untuk diekspor sesuai filter yang aktif.", "error");
+      return;
+    }
+
+    const headers = [
+      "Nama Event",
+      "Kategori",
+      "Deskripsi",
+      "Tanggal Mulai",
+      "Tanggal Selesai",
+      "Durasi",
+      "Lokasi",
+      "Dibuat Oleh"
+    ];
+
+    const rows = filteredAndSorted.map((evt) => [
+      evt.title,
+      getCategoryDetails(evt.categoryId).name,
+      evt.description || "",
+      formatFirebaseDate(evt.startDate),
+      formatFirebaseDate(evt.endDate),
+      calculateDuration(evt.startDate, evt.endDate),
+      evt.location || "",
+      getCreatorName(evt.createdBy)
+    ]);
+
+    // Construct CSV content with double-quotes escaping
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((val) => `"${val.replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+
+    // Add UTF-8 BOM so Excel opens it with correct encoding
+    const blob = new Blob([new Uint8Array([0xef, 0xbb, 0xbf]), csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `events-export-${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast("Daftar event berhasil diekspor ke CSV!", "success");
+  };
+
+  const handleExportPDF = () => {
+    if (filteredAndSorted.length === 0) {
+      showToast("Tidak ada data event untuk diekspor sesuai filter yang aktif.", "error");
+      return;
+    }
+
+    try {
+      const doc = new jsPDF("landscape", "mm", "a4");
+
+      // Set Title and Metadata
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.text("Laporan Rencana Event - NexaPlanner", 14, 20);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      
+      const filterText = `Filter/Pencarian Aktif: Status (${statusFilter}), Kategori (${
+        selectedCategoryFilter ? getCategoryDetails(selectedCategoryFilter).name : "Semua"
+      }), Kata Kunci ("${search || "-"}")`;
+      doc.text(filterText, 14, 26);
+      doc.text(`Dicetak pada: ${new Date().toLocaleString("id-ID")}`, 14, 31);
+
+      // Define Table columns and rows
+      const tableHeaders = [
+        "Nama Event",
+        "Kategori",
+        "Deskripsi",
+        "Mulai",
+        "Selesai",
+        "Durasi",
+        "Lokasi",
+        "Dibuat Oleh"
+      ];
+
+      const tableRows = filteredAndSorted.map((evt) => [
+        evt.title,
+        getCategoryDetails(evt.categoryId).name,
+        evt.description || "-",
+        formatFirebaseDate(evt.startDate),
+        formatFirebaseDate(evt.endDate),
+        calculateDuration(evt.startDate, evt.endDate),
+        evt.location || "-",
+        getCreatorName(evt.createdBy)
+      ]);
+
+      // Draw table via autoTable plugin
+      (doc as any).autoTable({
+        head: [tableHeaders],
+        body: tableRows,
+        startY: 38,
+        theme: "striped",
+        headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontStyle: "bold" },
+        styles: { fontSize: 8.5, cellPadding: 3, overflow: "linebreak" },
+        columnStyles: {
+          0: { cellWidth: 35 }, // Title
+          1: { cellWidth: 25 }, // Category
+          2: { cellWidth: 55 }, // Description
+          3: { cellWidth: 25 }, // Start Date
+          4: { cellWidth: 25 }, // End Date
+          5: { cellWidth: 15 }, // Duration
+          6: { cellWidth: 30 }, // Location
+          7: { cellWidth: 30 }, // Created By
+        },
+      });
+
+      doc.save(`events-export-${new Date().toISOString().slice(0, 10)}.pdf`);
+      showToast("Laporan event berhasil diekspor ke PDF!", "success");
+    } catch (err: any) {
+      console.error("PDF generation error:", err);
+      showToast("Gagal mengekspor laporan ke PDF.", "error");
+    }
   };
 
   // Dialog Handlers
@@ -269,15 +397,31 @@ export default function EventsPage() {
         title="Event"
         breadcrumbs={[{ name: "Event" }]}
         action={
-          isAdmin && (
+          <div className="flex gap-2 flex-wrap">
             <button
-              onClick={handleOpenAdd}
-              className="inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all hover:shadow-md cursor-pointer shrink-0"
+              onClick={handleExportCSV}
+              className="inline-flex items-center gap-1.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-foreground text-xs font-semibold px-3 py-2 border border-border rounded-xl shadow-xs transition-colors cursor-pointer shrink-0"
             >
-              <Plus className="h-4 w-4" />
-              <span>Tambah Event</span>
+              <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-500" />
+              <span>Ekspor CSV</span>
             </button>
-          )
+            <button
+              onClick={handleExportPDF}
+              className="inline-flex items-center gap-1.5 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-foreground text-xs font-semibold px-3 py-2 border border-border rounded-xl shadow-xs transition-colors cursor-pointer shrink-0"
+            >
+              <Download className="h-3.5 w-3.5 text-blue-500" />
+              <span>Ekspor PDF</span>
+            </button>
+            {isAdmin && (
+              <button
+                onClick={handleOpenAdd}
+                className="inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer shrink-0"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Tambah Event</span>
+              </button>
+            )}
+          </div>
         }
       />
 
