@@ -212,8 +212,10 @@ async function handleReminders(request: Request) {
       return NextResponse.json({ success: true, message: "Tidak ada pengingat agenda untuk dikirim 7 hari ke depan." });
     }
 
-    // 4. Build Discord Embed Fields grouped by day
-    const fields = [];
+    // 4. Build Discord Embeds (one per day)
+    const embeds = [];
+    const separator = "━━━━━━━━━━━━━━━━━━━━━━━━";
+    
     for (let i = 0; i <= 7; i++) {
       const dayEvents = groupedEvents[i];
       if (dayEvents.length === 0) continue;
@@ -227,62 +229,66 @@ async function handleReminders(request: Request) {
 
       const targetDate = new Date(todayMidnight.getTime() + (i * 24 * 60 * 60 * 1000));
       
-      let headerName = "";
+      let title = "";
+      let color = 2445803; // Default blue (#2563EB)
+
       if (i === 0) {
-        headerName = `🔴 Hari Ini - ${getIndoDayAndDate(targetDate)}`;
+        title = `🔴 Hari Ini — ${getIndoDayAndDate(targetDate)}`;
+        color = 15548997; // Red (#ED4245)
       } else if (i === 1) {
-        headerName = `🟡 Besok - ${getIndoDayAndDate(targetDate)}`;
+        title = `🟡 Besok — ${getIndoDayAndDate(targetDate)}`;
+        color = 16705372; // Yellow (#FEE75C)
       } else {
-        headerName = `📅 ${getIndoDayAndDate(targetDate)} (${i} hari lagi)`;
+        title = `📅 ${getIndoDayAndDate(targetDate)} (${i} hari lagi)`;
+        color = 3447003; // Aqua/Blue (#3498DB)
       }
 
-      const eventLines = dayEvents.map(evt => {
+      const eventBlocks = dayEvents.map(evt => {
         const categoryName = getCategoryName(evt.categoryId);
         const dateRangeStr = formatIndoDateRange(evt.startDate, evt.endDate);
         const timeRangeStr = formatEventTimeRange(evt.startDate, evt.endDate);
 
-        let eventStr = `• **${evt.title}** [${categoryName}]`;
+        let eventStr = `📌 **${evt.title}**\n🏷️ Kategori: \`${categoryName}\``;
 
         if (timeRangeStr !== "All Day") {
-          eventStr += `\n  ⏰ ${timeRangeStr}`;
+          eventStr += `\n⏰ Waktu: **${timeRangeStr}**`;
         }
 
         const startParts = getWIBDateParts(evt.startDate);
         const endParts = getWIBDateParts(evt.endDate);
         const isSameDay = startParts.day === endParts.day && startParts.monthNum === endParts.monthNum && startParts.year === endParts.year;
         if (!isSameDay) {
-          eventStr += `\n  📅 ${dateRangeStr}`;
+          eventStr += `\n📅 Tanggal: **${dateRangeStr}**`;
         }
 
         if (evt.location) {
-          eventStr += `\n  📍 ${evt.location}`;
+          eventStr += `\n📍 Lokasi: *${evt.location}*`;
+        }
+
+        if (evt.description) {
+          eventStr += `\n📝 Keterangan: _${evt.description}_`;
         }
 
         return eventStr;
       });
 
-      fields.push({
-        name: headerName,
-        value: eventLines.join("\n\n"),
-        inline: false
+      const description = eventBlocks.join(`\n\n${separator}\n\n`);
+
+      embeds.push({
+        title: title,
+        description: description,
+        color: color,
+        footer: {
+          text: "🤖 NexaPlanner Bot",
+        },
+        timestamp: new Date().toISOString(),
       });
     }
 
     const greeting = settings.discordMessage || "Oi, reminder nih!";
     const payload = {
-      content: `@everyone ${greeting}`,
-      embeds: [
-        {
-          title: "📅 NexaPlanner - Rangkuman Agenda 7 Hari Ke Depan",
-          description: `Berikut adalah agenda tim NexaCode untuk 7 hari ke depan (hari ini s.d. 7 hari mendatang). Terdapat **${totalCount} agenda** yang terdaftar:`,
-          color: 2445803, // Hex #2563EB -> decimal
-          fields: fields,
-          footer: {
-            text: "🤖 NexaPlanner Bot",
-          },
-          timestamp: new Date().toISOString(),
-        }
-      ]
+      content: `@everyone ${greeting}\n\nBerikut adalah agenda tim NexaCode untuk 7 hari ke depan (hari ini s.d. 7 hari mendatang). Terdapat **${totalCount} agenda** yang terdaftar:`,
+      embeds: embeds
     };
 
     const res = await fetch(webhookUrl, {
