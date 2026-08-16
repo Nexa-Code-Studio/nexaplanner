@@ -248,7 +248,7 @@ async function handleReminders(request: Request) {
         const dateRangeStr = formatIndoDateRange(evt.startDate, evt.endDate);
         const timeRangeStr = formatEventTimeRange(evt.startDate, evt.endDate);
 
-        let eventStr = `**${evt.title}**\nKategori: \`${categoryName}\``;
+        let eventStr = `📌 **${evt.title}**\nKategori: \`${categoryName}\``;
 
         if (timeRangeStr !== "All Day") {
           eventStr += `\nWaktu: **${timeRangeStr}**`;
