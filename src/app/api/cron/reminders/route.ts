@@ -248,25 +248,25 @@ async function handleReminders(request: Request) {
         const dateRangeStr = formatIndoDateRange(evt.startDate, evt.endDate);
         const timeRangeStr = formatEventTimeRange(evt.startDate, evt.endDate);
 
-        let eventStr = `📌 **${evt.title}**\n🏷️ Kategori: \`${categoryName}\``;
+        let eventStr = `**${evt.title}**\nKategori: \`${categoryName}\``;
 
         if (timeRangeStr !== "All Day") {
-          eventStr += `\n⏰ Waktu: **${timeRangeStr}**`;
+          eventStr += `\nWaktu: **${timeRangeStr}**`;
         }
 
         const startParts = getWIBDateParts(evt.startDate);
         const endParts = getWIBDateParts(evt.endDate);
         const isSameDay = startParts.day === endParts.day && startParts.monthNum === endParts.monthNum && startParts.year === endParts.year;
         if (!isSameDay) {
-          eventStr += `\n📅 Tanggal: **${dateRangeStr}**`;
+          eventStr += `\nTanggal: **${dateRangeStr}**`;
         }
 
         if (evt.location) {
-          eventStr += `\n📍 Lokasi: *${evt.location}*`;
+          eventStr += `\nLokasi: *${evt.location}*`;
         }
 
         if (evt.description) {
-          eventStr += `\n📝 Keterangan: _${evt.description}_`;
+          eventStr += `\nKeterangan: _${evt.description}_`;
         }
 
         return eventStr;
