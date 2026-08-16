@@ -304,44 +304,15 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <span className="text-xs font-bold text-muted-foreground block mb-1">Interval Pengingat Hari</span>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="flex items-center gap-2 text-xs font-bold text-muted-foreground select-none cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isH7Enabled}
-                      onChange={() => setIsH7Enabled(!isH7Enabled)}
-                      className="rounded border-border text-primary-500 focus:ring-primary-500 h-4 w-4 cursor-pointer"
-                    />
-                    <span>H-7 Event</span>
-                  </label>
-                  <label className="flex items-center gap-2 text-xs font-bold text-muted-foreground select-none cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isH3Enabled}
-                      onChange={() => setIsH3Enabled(!isH3Enabled)}
-                      className="rounded border-border text-primary-500 focus:ring-primary-500 h-4 w-4 cursor-pointer"
-                    />
-                    <span>H-3 Event</span>
-                  </label>
-                  <label className="flex items-center gap-2 text-xs font-bold text-muted-foreground select-none cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isH1Enabled}
-                      onChange={() => setIsH1Enabled(!isH1Enabled)}
-                      className="rounded border-border text-primary-500 focus:ring-primary-500 h-4 w-4 cursor-pointer"
-                    />
-                    <span>H-1 Event</span>
-                  </label>
-                  <label className="flex items-center gap-2 text-xs font-bold text-muted-foreground select-none cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isH0Enabled}
-                      onChange={() => setIsH0Enabled(!isH0Enabled)}
-                      className="rounded border-border text-primary-500 focus:ring-primary-500 h-4 w-4 cursor-pointer"
-                    />
-                    <span>Hari H Event</span>
-                  </label>
+                <span className="text-xs font-bold text-muted-foreground block mb-1">Cakupan Pengingat</span>
+                <div className="bg-slate-50 dark:bg-slate-900 border border-border rounded-xl p-3.5 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    <Sparkles className="h-4 w-4" />
+                    <span>Mode Rangkuman 7 Hari Aktif</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
+                    Sistem akan mengirimkan rangkuman seluruh agenda yang dijadwalkan dalam 7 hari ke depan (hari ini s.d H+7) secara lengkap, termasuk informasi waktu dan lokasinya.
+                  </p>
                 </div>
               </div>
             </div>

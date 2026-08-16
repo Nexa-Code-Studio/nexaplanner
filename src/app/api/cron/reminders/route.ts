@@ -91,10 +91,6 @@ async function handleReminders(request: Request) {
       return cat ? cat.name : "Tanpa Kategori";
     };
 
-    // Calculate dates
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     const parseFirebaseDate = (dateVal: any): Date => {
       if (!dateVal) return new Date();
       if (dateVal.seconds !== undefined) return new Date(dateVal.seconds * 1000);
@@ -102,27 +98,82 @@ async function handleReminders(request: Request) {
       return new Date(dateVal);
     };
 
+    // Helper to format date parts in Asia/Jakarta timezone
+    function getWIBDateParts(dateVal: any) {
+      const date = parseFirebaseDate(dateVal);
+      const formatter = new Intl.DateTimeFormat('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      const parts = formatter.formatToParts(date);
+      const findPart = (type: string) => parts.find(p => p.type === type)?.value || '';
+      
+      return {
+        day: parseInt(findPart('day'), 10),
+        monthNum: parseInt(findPart('month'), 10) - 1, // 0-indexed
+        year: parseInt(findPart('year'), 10),
+        hour: parseInt(findPart('hour'), 10),
+        minute: parseInt(findPart('minute'), 10),
+      };
+    }
+
+    // Helper to get midnight in WIB as a UTC Date for arithmetic calculations
+    function getWIBMidnight(dateVal: any): Date {
+      const parts = getWIBDateParts(dateVal);
+      return new Date(Date.UTC(parts.year, parts.monthNum, parts.day, 0, 0, 0, 0));
+    }
+
+    // Helper to format event time in WIB
+    function formatEventTimeRange(startVal: any, endVal: any): string {
+      const startParts = getWIBDateParts(startVal);
+      const endParts = getWIBDateParts(endVal);
+      
+      if (startParts.hour === 0 && startParts.minute === 0 && endParts.hour === 0 && endParts.minute === 0) {
+        return "All Day";
+      }
+      
+      const pad = (num: number) => String(num).padStart(2, '0');
+      return `${pad(startParts.hour)}:${pad(startParts.minute)} - ${pad(endParts.hour)}:${pad(endParts.minute)} WIB`;
+    }
+
+    // Helper to format Indonesian date in Asia/Jakarta timezone
+    function getIndoDayAndDate(dateVal: Date): string {
+      const formatter = new Intl.DateTimeFormat('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+      return formatter.format(dateVal);
+    }
+
     function formatIndoDateRange(startVal: any, endVal: any): string {
-      const start = parseFirebaseDate(startVal);
-      const end = parseFirebaseDate(endVal);
+      const startParts = getWIBDateParts(startVal);
+      const endParts = getWIBDateParts(endVal);
 
       const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 
-      const startDay = start.getDate();
-      const startMonth = months[start.getMonth()];
-      const startYear = start.getFullYear();
+      const startDay = startParts.day;
+      const startMonth = months[startParts.monthNum];
+      const startYear = startParts.year;
 
-      const endDay = end.getDate();
-      const endMonth = months[end.getMonth()];
-      const endYear = end.getFullYear();
+      const endDay = endParts.day;
+      const endMonth = months[endParts.monthNum];
+      const endYear = endParts.year;
 
       // 1. Same day
-      if (startDay === endDay && startMonth === endMonth && startYear === endYear) {
+      if (startDay === endDay && startParts.monthNum === endParts.monthNum && startYear === endYear) {
         return `${startDay} ${startMonth} ${startYear}`;
       }
 
       // 2. Same month and same year
-      if (startMonth === endMonth && startYear === endYear) {
+      if (startParts.monthNum === endParts.monthNum && startYear === endYear) {
         return `${startDay}–${endDay} ${startMonth} ${startYear}`;
       }
 
@@ -135,77 +186,100 @@ async function handleReminders(request: Request) {
       return `${startDay} ${startMonth} ${startYear} – ${endDay} ${endMonth} ${endYear}`;
     }
 
-    const isH0Enabled = settings.isH0Enabled !== false;
-    const isH1Enabled = settings.isH1Enabled !== false;
-    const isH3Enabled = settings.isH3Enabled !== false;
-    const isH7Enabled = settings.isH7Enabled !== false;
+    const todayMidnight = getWIBMidnight(new Date());
 
-    // Group matching reminders
-    const h0Events: string[] = [];
-    const h1Events: string[] = [];
-    const h3Events: string[] = [];
-    const h7Events: string[] = [];
+    // Initialize grouped events dictionary for the next 7 days (0 to 7)
+    const groupedEvents: { [key: number]: any[] } = {};
+    for (let i = 0; i <= 7; i++) {
+      groupedEvents[i] = [];
+    }
 
     for (const evt of events) {
-      const start = parseFirebaseDate(evt.startDate);
-      start.setHours(0, 0, 0, 0);
-
-      const diffTime = start.getTime() - today.getTime();
+      const startMidnight = getWIBMidnight(evt.startDate);
+      const diffTime = startMidnight.getTime() - todayMidnight.getTime();
       const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-      const dateRangeStr = formatIndoDateRange(evt.startDate, evt.endDate);
-      const eventString = `📌 ${evt.title}\n📅 ${getCategoryName(evt.categoryId)} (${dateRangeStr})${evt.location ? `\n📍 ${evt.location}` : ""}`;
-
-      if (diffDays === 0 && isH0Enabled) {
-        h0Events.push(eventString);
-      } else if (diffDays === 1 && isH1Enabled) {
-        h1Events.push(eventString);
-      } else if (diffDays === 3 && isH3Enabled) {
-        h3Events.push(eventString);
-      } else if (diffDays === 7 && isH7Enabled) {
-        h7Events.push(eventString);
+      if (diffDays >= 0 && diffDays <= 7) {
+        groupedEvents[diffDays].push(evt);
       }
     }
 
-    // 3. If no matching events, do not send webhook
-    if (h0Events.length === 0 && h1Events.length === 0 && h3Events.length === 0 && h7Events.length === 0) {
-      return NextResponse.json({ success: true, message: "Tidak ada pengingat agenda untuk dikirim hari ini." });
+    // Calculate total count
+    const totalCount = Object.values(groupedEvents).reduce((acc, curr) => acc + curr.length, 0);
+
+    // 3. If no events in the next 7 days, do not send webhook
+    if (totalCount === 0) {
+      return NextResponse.json({ success: true, message: "Tidak ada pengingat agenda untuk dikirim 7 hari ke depan." });
     }
 
-    // 4. Construct clean, separator-based plain text message
-    const separator = "━━━━━━━━━━━━━━━━━━";
-    const sections: string[] = [];
-    let totalCount = 0;
+    // 4. Build Discord Embed Fields grouped by day
+    const fields = [];
+    for (let i = 0; i <= 7; i++) {
+      const dayEvents = groupedEvents[i];
+      if (dayEvents.length === 0) continue;
 
-    if (h0Events.length > 0) {
-      totalCount += h0Events.length;
-      sections.push(`🔴 HARI INI\n\n${h0Events.join("\n\n")}`);
-    }
-    if (h1Events.length > 0) {
-      totalCount += h1Events.length;
-      sections.push(`🟡 BESOK\n\n${h1Events.join("\n\n")}`);
-    }
-    if (h3Events.length > 0) {
-      totalCount += h3Events.length;
-      sections.push(`🟢 H-3\n\n${h3Events.join("\n\n")}`);
-    }
-    if (h7Events.length > 0) {
-      totalCount += h7Events.length;
-      sections.push(`🔵 H-7\n\n${h7Events.join("\n\n")}`);
-    }
+      // Sort events on this day chronologically by start time
+      dayEvents.sort((a, b) => {
+        const timeA = parseFirebaseDate(a.startDate).getTime();
+        const timeB = parseFirebaseDate(b.startDate).getTime();
+        return timeA - timeB;
+      });
 
-    const bodyText = sections.join(`\n\n${separator}\n\n`);
+      const targetDate = new Date(todayMidnight.getTime() + (i * 24 * 60 * 60 * 1000));
+      
+      let headerName = "";
+      if (i === 0) {
+        headerName = `🔴 Hari Ini - ${getIndoDayAndDate(targetDate)}`;
+      } else if (i === 1) {
+        headerName = `🟡 Besok - ${getIndoDayAndDate(targetDate)}`;
+      } else {
+        headerName = `📅 ${getIndoDayAndDate(targetDate)} (${i} hari lagi)`;
+      }
+
+      const eventLines = dayEvents.map(evt => {
+        const categoryName = getCategoryName(evt.categoryId);
+        const dateRangeStr = formatIndoDateRange(evt.startDate, evt.endDate);
+        const timeRangeStr = formatEventTimeRange(evt.startDate, evt.endDate);
+
+        let eventStr = `• **${evt.title}** [${categoryName}]`;
+
+        if (timeRangeStr !== "All Day") {
+          eventStr += `\n  ⏰ ${timeRangeStr}`;
+        }
+
+        const startParts = getWIBDateParts(evt.startDate);
+        const endParts = getWIBDateParts(evt.endDate);
+        const isSameDay = startParts.day === endParts.day && startParts.monthNum === endParts.monthNum && startParts.year === endParts.year;
+        if (!isSameDay) {
+          eventStr += `\n  📅 ${dateRangeStr}`;
+        }
+
+        if (evt.location) {
+          eventStr += `\n  📍 ${evt.location}`;
+        }
+
+        return eventStr;
+      });
+
+      fields.push({
+        name: headerName,
+        value: eventLines.join("\n\n"),
+        inline: false
+      });
+    }
 
     const greeting = settings.discordMessage || "Oi, reminder nih!";
-    const embedDescription = `Ada ${totalCount} agenda yang perlu diperhatikan.\n\n${separator}\n\n${bodyText}\n\n${separator}\n\n🤖 NexaPlanner`;
-
     const payload = {
       content: `@everyone ${greeting}`,
       embeds: [
         {
-          title: "📅 NexaPlanner Reminder",
-          description: embedDescription,
+          title: "📅 NexaPlanner - Rangkuman Agenda 7 Hari Ke Depan",
+          description: `Berikut adalah agenda tim NexaCode untuk 7 hari ke depan (hari ini s.d. 7 hari mendatang). Terdapat **${totalCount} agenda** yang terdaftar:`,
           color: 2445803, // Hex #2563EB -> decimal
+          fields: fields,
+          footer: {
+            text: "🤖 NexaPlanner Bot",
+          },
           timestamp: new Date().toISOString(),
         }
       ]
